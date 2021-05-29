@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from common.bgb_link_cable_server import BGBLinkCableServer
-from common.serial_link_cable_server import SerialLinkCableServer
+from common.serial_link_cable import SerialLinkCableServer
 from pokemon_data_structures import Trainer, Pokemon
 
 class TradeState:
@@ -132,6 +132,7 @@ arg_parser = argparse.ArgumentParser(description='Mocks a Pokemon trade.')
 arg_subparsers = arg_parser.add_subparsers(dest='connection_type', help='Types of connections')
 
 bgb_parser = arg_subparsers.add_parser('bgb', help='Connect to BGB emulator')
+bgb_parser.add_argument('--port', type=int, help='port to listen on for BGB data')
 
 serial_parser = arg_subparsers.add_parser('serial', help='Connect to Game Boy over serial')
 serial_parser.add_argument('port', type=str, help='serial port to connect to')
@@ -140,7 +141,8 @@ args = arg_parser.parse_args()
 is_master = False
 
 if args.connection_type == 'bgb':
-    server = BGBLinkCableServer()
+    kwargs = { 'port': args.port } if args.port is not None else {}
+    server = BGBLinkCableServer(**kwargs)
 elif args.connection_type == 'serial':
     server = SerialLinkCableServer(args.port)
     is_master = True
