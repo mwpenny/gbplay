@@ -1,5 +1,13 @@
 #!/usr/bin/python3
-from bgb_link_cable_server import BGBLinkCableServer
+import argparse
+import os
+import sys
+
+# Ugliness to do relative imports without a headache
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+from common.bgb_link_cable_server import BGBLinkCableServer
+from common.serial_link_cable_server import SerialLinkCableServer
 from pokemon_data_structures import Trainer, Pokemon
 
 class TradeState:
@@ -27,30 +35,31 @@ class PokeTrader:
     FIRST_POKEMON_MAGIC = 0x60
     LAST_POKEMON_MAGIC = 0x65
     TRADE_CANCELLED_MAGIC = 0x61
+    TRADE_CONFIRMED_MAGIC = 0x62
 
-    def __init__(self, trainer_data):
-        self._server = BGBLinkCableServer(self.on_client_data, verbose=False)
+    def __init__(self, server, trainer_data, is_master=False):
         self._trade_state = TradeState.NOT_CONNECTED
         self._transfer_counter = 0
+        self._server = server
         self._serialized_trainer_data = trainer_data.serialize()
+        self._is_master = is_master
 
     def run(self):
-        self._server.run()
+        self._server.run(self.on_client_data)
 
     # See http://www.adanscotney.com/2014/01/spoofing-pokemon-trades-with-stellaris.html
     def on_client_data(self, data):
-        to_send = data
+        to_send = data or 0
 
         if self._trade_state == TradeState.NOT_CONNECTED:
-            # We will always be slave
-            if data == self.MASTER_MAGIC:
-                to_send = self.SLAVE_MAGIC
-            elif data == 0:
-                to_send = 0
-            elif data == self.CONNECTED_MAGIC:
+            if data == self.CONNECTED_MAGIC:
                 self._trade_state = TradeState.WAITING_FOR_LINK_TYPE
                 to_send = self.CONNECTED_MAGIC
                 print('Pokemon link initiated')
+            elif self._is_master:
+                to_send = self.MASTER_MAGIC
+            elif data == self.MASTER_MAGIC:
+                to_send = self.SLAVE_MAGIC
 
         elif self._trade_state == TradeState.WAITING_FOR_LINK_TYPE:
             if data == self.CONNECTED_MAGIC:
@@ -102,12 +111,13 @@ class PokeTrader:
                 to_send = self.FIRST_POKEMON_MAGIC
             else:
                 self._trade_state = TradeState.TRADE_CONFIRMATION
+                print('Waiting for trade confirmation')
 
         elif self._trade_state == TradeState.TRADE_CONFIRMATION:
             if data == self.TRADE_CANCELLED_MAGIC:
                 self._trade_state = TradeState.TRADE_CANCELLED
                 print('Trade cancelled')
-            elif data != 0:
+            elif data == self.TRADE_CONFIRMED_MAGIC:
                 self._trade_state = TradeState.NOT_CONNECTED
                 print('Trade confirmed')
 
@@ -117,7 +127,26 @@ class PokeTrader:
 
         return to_send
 
+
+arg_parser = argparse.ArgumentParser(description='Mocks a Pokemon trade.')
+arg_subparsers = arg_parser.add_subparsers(dest='connection_type', help='Types of connections')
+
+bgb_parser = arg_subparsers.add_parser('bgb', help='Connect to BGB emulator')
+
+serial_parser = arg_subparsers.add_parser('serial', help='Connect to Game Boy over serial')
+serial_parser.add_argument('port', type=str, help='serial port to connect to')
+
+args = arg_parser.parse_args()
+is_master = False
+
+if args.connection_type == 'bgb':
+    server = BGBLinkCableServer()
+elif args.connection_type == 'serial':
+    server = SerialLinkCableServer(args.port)
+    is_master = True
+else:
+    raise Exception(f'Unknown connection type:', args.connection_type)
+
 trainer_data = Trainer('Matt')
 trainer_data.add_party_pokemon(Pokemon(0x15, 'MEW'))
-
-PokeTrader(trainer_data).run()
+PokeTrader(server, trainer_data, is_master).run()
