@@ -129,7 +129,7 @@ class PokeTrader:
 
 
 arg_parser = argparse.ArgumentParser(description='Mocks a Pokemon trade.')
-arg_subparsers = arg_parser.add_subparsers(dest='connection_type', help='Types of connections')
+arg_subparsers = arg_parser.add_subparsers(dest='connection_type', required=True, help='Types of connections')
 
 bgb_parser = arg_subparsers.add_parser('bgb', help='Connect to BGB emulator')
 bgb_parser.add_argument('--port', type=int, help='port to listen on for BGB data')
