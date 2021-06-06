@@ -60,7 +60,7 @@ class Pokemon:
     def serialize(self):
         # See https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9mon_data_structure_in_Generation_I
         return struct.pack(
-            "<BH9BH3B6H5B5H",
+            ">BH9BH3B6H5B5H",
             self.id, self.hp, self.level_pc, self.status, self.type1, self.type2,
             self.catch_rate, self.move1, self.move2, self.move3, self.move4,
             self.trainer_id, self.xp & 0xFF, (self.xp >> 8) & 0xFF,
