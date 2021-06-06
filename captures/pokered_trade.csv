@@ -1,0 +1,771 @@
+Master,Slave,Notes
+01,02,Master/slave negotiation
+00,00,Confirmation
+00,FE,FE = null
+00,FE,
+60,60,60 = “connected”
+60,60,
+60,60,
+60,60,
+60,00,
+60,00,
+60,FE,
+60,FE,
+60,FE,
+60,FE,
+60,FE,
+60,D0,D0 = “showing trade/battle prompt”
+60,D0,
+00,00,
+00,D0,Polling for selection (either player can select)
+00,D0,
+00,00,
+00,D0,
+00,D0,
+00,00,
+00,D0,
+00,D0,
+00,00,
+D0,D0,
+D0,D0,
+00,00,
+D0,D0,
+D0,D0,
+00,00,
+D0,D0,
+D0,D0,
+00,00,
+D0,D4,Slave selects trade center
+D0,D4,
+00,00,
+FE,FE,
+60,60,
+60,60,
+60,60,
+60,60,
+60,00,
+60,00,
+60,FD,Polling (waiting for main data transfer)
+60,FD,
+60,FD,
+60,FD,
+60,FD,
+60,FD,
+60,FD,
+00,FD,
+00,FD,
+00,FD,
+00,FD,
+00,FD,
+00,FD,
+00,FD,
+00,FD,
+00,FD,
+00,FD,
+00,FD,
+00,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+5B,FD,Master has initiated data transfer (non-FD byte)
+C2,75,Sending random seed (10 bytes)
+2B,EF,
+96,6B,
+03,E8,
+72,67,
+E2,E8,
+54,6B,
+C8,F0,
+3E,77,
+FD,00,End of random seed
+FD,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+FD,8C,"Start of trainer data. Trainer names (10 bytes + terminator). NULL, M"
+91,80,"R, A"
+8E,93,"O, T"
+86,93,"G, T"
+50,87,"END, H"
+00,84,"NULL, E"
+00,96,"NULL, W"
+00,50,"NULL, END"
+00,00,
+00,00,
+00,00,
+00,06,"Start of party Pokemon header. NULL, 6 Pokemon"
+06,B3,"6 Pokemon, Wartortle"
+49,15,"Moltres, Mew"
+58,54,"Dratini, Pikachu"
+59,96,"Dragonair, Pidgeotto"
+42,03,"Dragonite, Nidoran (male)"
+83,B9,"Mewtwo, Oddish"
+15,FF,"Mew, END"
+FF,B3,"END, Begin Wartortle stats"
+49,00,"Begin Moltres stats, Wartortle HP high byte"
+01,53,"Moltres HP high byte, Wartortle HP low byte"
+2B,00,"Moltres HP low byte, Wartortle PC level"
+00,00,"Moltres PC level, Wartortle status"
+00,15,"Moltres status, Wartortle type 1 (water)"
+14,15,"Moltres type 1 (fire), Wartortle type 2 (water)"
+02,2D,"Moltres type 2 (flying), Wartortle catch rate"
+03,21,"Moltres catch rate, Wartortle move 1 (tackle)"
+13,2C,"Moltres move 1 (fly), Wartortle move 2 (bite)"
+2B,91,"Moltres move 2 (leer), Wartortle move 3 (bubble)"
+61,37,"Moltres move 3 (agility), Wartortle move 4 (water gun)"
+8F,5E,"Moltres move 4 (sky attack), Wartortle original trainer high byte"
+63,AF,"Moltres original trainer high byte, Wartortle original trainer low byte"
+EE,00,"Moltres original trainer low byte, Wartortle exp byte 2"
+13,67,"Moltres exp byte 2, Wartortle exp byte 1"
+12,3D,"Moltres exp byte 1, Wartortle exp byte 0"
+D0,15,"Moltres exp byte 0, Wartortle HP EV high byte"
+04,78,"Moltres HP EV high byte, Wartortle HP EV low byte"
+38,1A,"Moltres HP EV low byte, Wartortle attack EV high byte"
+05,28,"Moltres attack EV high byte, Wartortle attack EV low byte"
+4C,19,"Moltres attack EV low byte, Wartortle defense EV high byte"
+05,7F,"Moltres defense EV high byte, Wartortle defense EV low byte"
+33,1B,"Moltres defense EV low byte, Wartortle speed EV high byte"
+05,68,"Moltres speed EV high byte, Wartortle speed EV low byte"
+9C,13,"Moltres speed EV low byte, Wartortle special EV high byte"
+05,E2,"Moltres special EV high byte, Wartortle special EV low byte"
+6F,EA,"Moltres special EV low byte, Wartortle IV high byte"
+C9,62,"Moltres IV high byte, Wartortle IV low byte"
+74,23,"Moltres IV low byte, Wartortle move 1 (tackle) PP"
+0F,19,"Moltres move 1 (fly) PP, Wartortle move 2 (bite) PP"
+1E,1E,"Moltres move 2 (leer) PP, Wartortle move 3 (bubble) PP"
+1E,19,"Moltres move 3 (agility) PP, Wartortle move 4 (water gun) PP"
+05,1F,"Moltres move 4 (sky attack) PP, Wartortle level"
+64,00,"Moltres level, Wartortle max HP high byte"
+01,53,"Moltres max HP high byte, Wartortle max HP low byte"
+2B,00,"Moltres max HP low byte, Wartortle attack high byte"
+00,3A,"Moltres attack high byte, Wartortle attack low byte"
+E2,00,"Moltres attack low byte, Wartortle defense high byte"
+00,43,"Moltres defense high byte, Wartortle defense low byte"
+C9,00,"Moltres defense low byte, Wartortle speed high byte"
+00,32,"Moltres speed high byte, Wartortle speed low byte"
+C5,00,"Moltres speed low byte, Wartortle special high byte"
+01,33,"Moltres special high byte, Wartortle special low byte"
+04,15,"Moltres special low byte, Begin Mew stats"
+58,00,"Begin Dratini stats, Mew HP high byte"
+00,61,"Dratini HP high byte, Mew HP low byte"
+D0,07,"Dratini HP low byte, Mew PC level"
+00,00,"Dratini PC level, Mew status"
+00,18,"Dratini status, Mew type 1 (psychic)"
+1A,18,"Dratini type 1 (dragon), Mew type 2 (psychic)"
+1A,2D,"Dratini type 2 (dragon), Mew catch rate"
+2D,01,"Dratini catch rate, Mew move 1 (pound)"
+61,45,"Dratini move 1 (agility), Mew move 2 (seismic toss)"
+15,90,"Dratini move 2 (slam), Mew move 3 (transform)"
+52,05,"Dratini move 3 (dragon rage), Mew move 4 (mega punch)"
+3F,5E,"Dratini move 4 (hyper beam), Mew original trainer high byte"
+63,AF,"Dratini original trainer high byte, Mew original trainer low byte"
+EE,00,"Dratini original trainer low byte, Mew exp byte 2"
+13,3B,"Dratini exp byte 2, Mew exp byte 1"
+12,6B,"Dratini exp byte 1, Mew exp byte 0"
+D0,06,"Dratini exp byte 0, Mew HP EV high byte"
+00,7C,"Dratini HP EV high byte, Mew HP EV low byte"
+00,09,"Dratini HP EV low byte, Mew attack EV high byte"
+00,A3,"Dratini attack EV high byte, Mew attack EV low byte"
+00,08,"Dratini attack EV low byte, Mew defense EV high byte"
+00,D4,"Dratini defense EV high byte, Mew defense EV low byte"
+00,0C,"Dratini defense EV low byte, Mew speed EV high byte"
+00,C8,"Dratini speed EV high byte, Mew speed EV low byte"
+00,0A,"Dratini speed EV low byte, Mew special EV high byte"
+00,50,"Dratini special EV high byte, Mew special EV low byte"
+00,1F,"Dratini special EV low byte, Mew IV high byte"
+96,E3,"Dratini IV high byte, Mew IV low byte"
+A5,23,"Dratini IV low byte, Mew move 1 (pound) PP"
+1E,14,"Dratini move 1 (agility) PP, Mew move 2 (seismic toss) PP"
+14,0A,"Dratini move 2 (slam) PP, Mew move 3 (transform) PP"
+0A,14,"Dratini move 3 (dragon rage) PP, Mew move 4 (mega punch) PP"
+05,1A,"Dratini move 4 (hyper beam) PP, Mew level"
+64,00,"Dratini level, Mew max HP high byte"
+00,61,"Dratini max HP high byte, Mew max HP low byte"
+D0,00,"Dratini max HP low byte, Mew attack high byte"
+00,3C,"Dratini attack high byte, Mew attack low byte"
+95,00,"Dratini attack low byte, Mew defense high byte"
+00,43,"Dratini defense high byte, Mew defense low byte"
+69,00,"Dratini defense low byte, Mew speed high byte"
+00,43,"Dratini speed high byte, Mew speed low byte"
+7B,00,"Dratini speed low byte, Mew special high byte"
+00,3D,"Dratini special high byte, Mew special low byte"
+71,54,"Dratini special low byte, Begin Pikachu stats"
+59,00,"Begin Dragonair stats, Pikachu HP high byte"
+00,23,"Dragonair HP high byte, Pikachu HP low byte"
+E7,00,"Dragonair HP low byte, Pikachu PC level"
+00,00,"Dragonair PC level, Pikachu status"
+00,17,"Dragonair status, Pikachu type 1 (electric)"
+1A,17,"Dragonair type 1 (dragon), Pikachu type 2 (electric)"
+1A,BE,"Dragonair type 2 (dragon), Pikachu catch rate"
+2D,54,"Dragonair catch rate, Pikachu move 1 (thunder shock)"
+61,2D,"Dragonair move 1 (agility), Pikachu move 2 (growl)"
+15,56,"Dragonair move 2 (slam), Pikachu move 3 (thunder wave)"
+52,55,"Dragonair move 3 (dragon rage), Pikachu move 4 (thunder bolt)"
+3F,5E,"Dragonair move 4 (hyper beam), Pikachu original trainer high byte"
+63,AF,"Dragonair original trainer high byte, Pikachu original trainer low byte"
+EE,00,"Dragonair original trainer low byte, Pikachu exp byte 2"
+13,09,"Dragonair exp byte 2, Pikachu exp byte 1"
+12,3D,"Dragonair exp byte 1, Pikachu exp byte 0"
+D0,01,"Dragonair exp byte 0, Pikachu HP EV high byte"
+00,E7,"Dragonair HP EV high byte, Pikachu HP EV low byte"
+00,02,"Dragonair HP EV low byte, Pikachu attack EV high byte"
+00,E2,"Dragonair attack EV high byte, Pikachu attack EV low byte"
+00,02,"Dragonair attack EV low byte, Pikachu defense EV high byte"
+00,2F,"Dragonair defense EV high byte, Pikachu defense EV low byte"
+00,04,"Dragonair defense EV low byte, Pikachu speed EV high byte"
+00,12,"Dragonair speed EV high byte, Pikachu speed EV low byte"
+00,02,"Dragonair speed EV low byte, Pikachu special EV high byte"
+00,4E,"Dragonair special EV high byte, Pikachu special EV low byte"
+00,3A,"Dragonair special EV low byte, Pikachu IV high byte"
+A2,6D,"Dragonair IV high byte, Pikachu IV low byte"
+03,1E,"Dragonair IV low byte, Pikachu move 1 (thunder shock) PP"
+1E,28,"Dragonair move 1 (agility) PP, Pikachu move 2 (growl) PP"
+14,14,"Dragonair move 2 (slam) PP, Pikachu move 3 (thunder wave) PP"
+0A,0F,"Dragonair move 3 (dragon rage) PP, Pikachu move 4 (thunder bolt) PP"
+05,0D,"Dragonair move 4 (hyper beam) PP, Pikachu level"
+64,00,"Dragonair level, Pikachu max HP high byte"
+00,23,"Dragonair max HP high byte, Pikachu max HP low byte"
+E7,00,"Dragonair max HP low byte, Pikachu attack high byte"
+00,14,"Dragonair attack high byte, Pikachu attack low byte"
+BF,00,"Dragonair attack low byte, Pikachu defense high byte"
+00,10,"Dragonair defense high byte, Pikachu defense low byte"
+89,00,"Dragonair defense low byte, Pikachu speed high byte"
+00,1E,"Dragonair speed high byte, Pikachu speed low byte"
+8F,00,"Dragonair speed low byte, Pikachu special high byte"
+00,16,"Dragonair special high byte, Pikachu special low byte"
+95,96,"Dragonair special low byte, Begin Pidgeotto stats"
+42,00,"Begin Dragonite stats, Pidgeotto HP high byte"
+01,34,"Dragonite HP high byte, Pidgeotto HP low byte"
+29,00,"Dragonite HP low byte, Pidgeotto PC level"
+00,00,"Dragonite PC level, Pidgeotto status"
+00,00,"Dragonite status, Pidgeotto type 1 (normal)"
+1A,02,"Dragonite type 1 (dragon), Pidgeotto type 2 (flying)"
+02,FF,"Dragonite type 2 (flying), Pidgeotto catch rate"
+2D,10,"Dragonite catch rate, Pidgeotto move 1 (gust)"
+61,62,"Dragonite move 1 (agility), Pidgeotto move 2 (quick attack)"
+15,00,"Dragonite move 2 (slam), NULL"
+52,00,"Dragonite move 3 (dragon rage), NULL"
+3F,5E,"Dragonite move 4 (hyper beam), Pidgeotto original trainer high byte"
+63,AF,"Dragonite original trainer high byte, Pidgeotto original trainer low byte"
+EE,00,"Dragonite original trainer low byte, Pidgeotto exp byte 2"
+13,0F,"Dragonite exp byte 2, Pidgeotto exp byte 1"
+12,46,"Dragonite exp byte 1, Pidgeotto exp byte 0"
+D0,02,"Dragonite exp byte 0, Pidgeotto HP EV high byte"
+00,78,"Dragonite HP EV high byte, Pidgeotto HP EV low byte"
+00,03,"Dragonite HP EV low byte, Pidgeotto attack EV high byte"
+00,81,"Dragonite attack EV high byte, Pidgeotto attack EV low byte"
+00,02,"Dragonite attack EV low byte, Pidgeotto defense EV high byte"
+00,A5,"Dragonite defense EV high byte, Pidgeotto defense EV low byte"
+00,04,"Dragonite defense EV low byte, Pidgeotto speed EV high byte"
+00,D8,"Dragonite speed EV high byte, Pidgeotto speed EV low byte"
+00,02,"Dragonite speed EV low byte, Pidgeotto special EV high byte"
+00,F7,"Dragonite special EV high byte, Pidgeotto special EV low byte"
+00,C2,"Dragonite special EV low byte, Pidgeotto IV high byte"
+41,71,"Dragonite IV high byte, Pidgeotto IV low byte"
+C2,23,"Dragonite IV low byte, Pidgeotto move 1 (gust) PP"
+1E,1E,"Dragonite move 1 (agility) PP, Pidgeotto move 2 (quick attack) PP"
+14,00,"Dragonite move 2 (slam) PP, Pidgeotto move 3 (NULL) PP"
+0A,00,"Dragonite move 3 (dragon rage) PP, Pidgeotto move 4 (NULL) PP"
+05,12,"Dragonite move 4 (hyper beam) PP, Pidgeotto level"
+64,00,"Dragonite level, Pidgeotto max HP high byte"
+01,34,"Dragonite max HP high byte, Pidgeotto max HP low byte"
+29,00,"Dragonite max HP low byte, Pidgeotto attack high byte"
+01,20,"Dragonite attack high byte, Pidgeotto attack low byte"
+16,00,"Dragonite attack low byte, Pidgeotto defense high byte"
+00,1A,"Dragonite defense high byte, Pidgeotto defense low byte"
+C3,00,"Dragonite defense low byte, Pidgeotto speed high byte"
+00,22,"Dragonite speed high byte, Pidgeotto speed low byte"
+BB,00,"Dragonite speed low byte, Pidgeotto special high byte"
+00,18,"Dragonite special high byte, Pidgeotto special low byte"
+CE,03,"Dragonite special low byte, Begin Nidoran (male) stats"
+83,00,"Begin Mewtwo stats, Nidoran (male) HP high byte"
+01,0E,"Mewtwo HP high byte, Nidoran (male) HP low byte"
+5A,02,"Mewtwo HP low byte, Nidoran (male) PC level"
+00,00,"Mewtwo PC level, Nidoran (male) status"
+00,03,"Mewtwo status, Nidoran (male) type 1 (poison)"
+18,03,"Mewtwo type 1 (psychic), Nidoran (male) type 2 (poison)"
+18,EB,"Mewtwo type 2 (psychic), Nidoran (male) catch rate"
+03,2B,"Mewtwo catch rate, Nidoran (male) move 1 (leer)"
+5E,21,"Mewtwo move 1 (psychic), Nidoran (male) move 2 (tackle)"
+69,00,"Mewtwo move 2 (recover), NULL"
+70,00,"Mewtwo move 3 (barrier), NULL"
+85,5E,"Mewtwo move 4 (amnesia), Nidoran (male) original trainer high byte"
+63,AF,"Mewtwo original trainer high byte, Nidoran (male) original trainer low byte"
+EE,00,"Mewtwo original trainer low byte, Nidoran (male) exp byte 2"
+13,00,"Mewtwo exp byte 2, Nidoran (male) exp byte 1"
+12,09,"Mewtwo exp byte 1, Nidoran (male) exp byte 0"
+D0,00,"Mewtwo exp byte 0, Nidoran (male) HP EV high byte"
+07,00,"Mewtwo HP EV high byte, Nidoran (male) HP EV low byte"
+51,00,"Mewtwo HP EV low byte, Nidoran (male) attack EV high byte"
+07,00,"Mewtwo attack EV high byte, Nidoran (male) attack EV low byte"
+EB,00,"Mewtwo attack EV low byte, Nidoran (male) defense EV high byte"
+07,00,"Mewtwo defense EV high byte, Nidoran (male) defense EV low byte"
+AF,00,"Mewtwo defense EV low byte, Nidoran (male) speed EV high byte"
+07,00,"Mewtwo speed EV high byte, Nidoran (male) speed EV low byte"
+72,00,"Mewtwo speed EV low byte, Nidoran (male) special EV high byte"
+06,00,"Mewtwo special EV high byte, Nidoran (male) special EV low byte"
+D1,AF,"Mewtwo special EV low byte, Nidoran (male) IV high byte"
+3F,67,"Mewtwo IV high byte, Nidoran (male) IV low byte"
+18,1E,"Mewtwo IV low byte, Nidoran (male) move 1 (leer) PP"
+05,23,"Mewtwo move 1 (psychic) PP, Nidoran (male) move 2 (tackle) PP"
+14,00,"Mewtwo move 2 (recover) PP, Nidoran (male) move 3 (NULL) PP"
+1E,00,"Mewtwo move 3 (barrier) PP, Nidoran (male) move 4 (NULL) PP"
+14,02,"Mewtwo move 4 (amnesia) PP, Nidoran (male) level"
+64,00,"Mewtwo level, Nidoran (male) max HP high byte"
+01,0E,"Mewtwo max HP high byte, Nidoran (male) max HP low byte"
+5A,00,"Mewtwo max HP low byte, Nidoran (male) attack high byte"
+00,07,"Mewtwo attack high byte, Nidoran (male) attack low byte"
+E4,00,"Mewtwo attack low byte, Nidoran (male) defense high byte"
+00,07,"Mewtwo defense high byte, Nidoran (male) defense low byte"
+D4,00,"Mewtwo defense low byte, Nidoran (male) speed high byte"
+01,07,"Mewtwo speed high byte, Nidoran (male) speed low byte"
+08,00,"Mewtwo speed low byte, Nidoran (male) special high byte"
+01,06,"Mewtwo special high byte, Nidoran (male) special low byte"
+45,B9,"Mewtwo special low byte, Begin Oddish stats"
+15,00,"Begin Mew stats, Oddish HP high byte"
+01,28,"Mew HP high byte, Oddish HP low byte"
+4E,0E,"Mew HP low byte, Oddish PC level"
+00,00,"Mew PC level, Oddish status"
+00,16,"Mew status, Oddish type 1 (grass)"
+18,03,"Mew type 1 (psychic), Oddish type 2 (poison)"
+18,FF,"Mew type 2 (psychic), Oddish catch rate"
+2D,47,"Mew catch rate, Oddish move 1 (absorb)"
+90,0F,"Mew move 1 (transform), Oddish move 2 (cut)"
+05,00,"Mew move 2 (mega punch), NULL"
+76,00,"Mew move 3 (metronome), NULL"
+5E,5E,"Mew move 4 (psychic), Oddish original trainer high byte"
+63,AF,"Mew original trainer high byte, Oddish original trainer low byte"
+EE,00,"Mew original trainer low byte, Oddish exp byte 2"
+10,06,"Mew exp byte 2, Oddish exp byte 1"
+2C,4C,"Mew exp byte 1, Oddish exp byte 0"
+14,00,"Mew exp byte 0, Oddish HP EV high byte"
+02,00,"Mew HP EV high byte, Oddish HP EV low byte"
+05,00,"Mew HP EV low byte, Oddish attack EV high byte"
+02,00,"Mew attack EV high byte, Oddish attack EV low byte"
+81,00,"Mew attack EV low byte, Oddish defense EV high byte"
+03,00,"Mew defense EV high byte, Oddish defense EV low byte"
+27,00,"Mew defense EV low byte, Oddish speed EV high byte"
+02,00,"Mew speed EV high byte, Oddish speed EV low byte"
+C4,00,"Mew speed EV low byte, Oddish special EV high byte"
+02,00,"Mew special EV high byte, Oddish special EV low byte"
+9E,79,"Mew special EV low byte, Oddish IV high byte"
+19,3F,"Mew IV high byte, Oddish IV low byte"
+B0,14,"Mew IV low byte, Oddish move 1 (absorb) PP"
+0A,1E,"Mew move 1 (transform) PP, Oddish move 2 (cut) PP"
+14,00,"Mew move 2 (mega punch) PP, Oddish move 3 (NULL) PP"
+0A,00,"Mew move 3 (metronome) PP, Oddish move 4 (NULL) PP"
+0A,0E,"Mew move 4 (psychic) PP, Oddish level"
+64,00,"Mew level, Oddish max HP high byte"
+01,28,"Mew max HP high byte, Oddish max HP low byte"
+4E,00,"Mew max HP low byte, Oddish attack high byte"
+00,14,"Mew attack high byte, Oddish attack low byte"
+CC,00,"Mew attack low byte, Oddish defense high byte"
+00,16,"Mew defense high byte, Oddish defense low byte"
+DC,00,"Mew defense low byte, Oddish speed high byte"
+00,0E,"Mew speed high byte, Oddish speed low byte"
+E0,00,"Mew speed low byte, Oddish special high byte"
+00,1E,"Mew special high byte, Oddish special low byte"
+CB,8C,"Mew special low byte, Begin Wartortle original trainer name (M)"
+91,80,"Begin Moltres original trainer name (R), A"
+8E,93,"O, T"
+86,93,"G, T"
+50,87,"END, H"
+00,84,"NULL, E"
+00,96,"NULL, W"
+00,50,"NULL, END"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,8C,"NULL, Begin Mew original trainer name (M)"
+91,80,"Begin Dratini original trainer name (R), A"
+8E,93,"O, T"
+86,93,"G, T"
+50,87,"END, H"
+00,84,"NULL, E"
+00,96,"NULL, W"
+00,50,"NULL, END"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,8C,"NULL, Begin Pikachu original trainer name (M)"
+91,80,"Begin Dragonair original trainer name (R), A"
+8E,93,"O, T"
+86,93,"G, T"
+50,87,"END, H"
+00,84,"NULL, E"
+00,96,"NULL, W"
+00,50,"NULL, END"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,8C,"NULL, Begin Pidgeotto original trainer name (M)"
+91,80,"Begin Dragonite original trainer name (R), A"
+8E,93,"O, T"
+86,93,"G, T"
+50,87,"END, H"
+00,84,"NULL, E"
+00,96,"NULL, W"
+00,50,"NULL, END"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,8C,"NULL, Begin Nidoran (male) original trainer name (M)"
+91,80,"Begin Mewtwo original trainer name (R), A"
+8E,93,"O, T"
+86,93,"G, T"
+50,87,"END, H"
+00,84,"NULL, E"
+00,96,"NULL, W"
+00,50,"NULL, END"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,8C,"NULL, Begin Oddish original trainer name (M)"
+91,80,"Begin Mew original trainer name (R), A"
+8E,93,"O, T"
+86,93,"G, T"
+50,87,"END, H"
+00,84,"NULL, E"
+00,96,"NULL, W"
+00,50,"NULL, END"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,00,"NULL, NULL"
+00,96,"NULL, Begin Wartortle nickname (W)"
+8C,80,"Begin Moltres nickname (M), A"
+8E,91,"O, R"
+8B,93,"L, T"
+93,8E,"T, O"
+91,91,"R, R"
+84,93,"E, T"
+92,8B,"S, L"
+50,84,"END, E"
+50,50,"END, END"
+50,50,"END, END"
+50,8C,"END, Begin Mew nickname (M)"
+83,84,"Begin Dratini nickname (D), E"
+91,96,"R, W"
+80,50,"A, END"
+93,50,"T, END"
+88,50,"I, END"
+8D,50,"N, END"
+88,50,"I, END"
+50,50,"END, END"
+50,50,"END, END"
+50,50,"END, END"
+50,8F,"END, Begin Pikachu nickname (P)"
+83,88,"Begin Dragonair nickname (D), I"
+91,8A,"R, K"
+80,80,"A, A"
+86,82,"G, C"
+8E,87,"O, H"
+8D,94,"N, U"
+80,50,"A, END"
+88,50,"I, END"
+91,50,"R, END"
+50,50,"END, END"
+50,8F,"END, Begin Pidgeotto nickname (P)"
+83,88,"Begin Dragonite nickname (D), I"
+91,83,"R, D"
+80,86,"A, G"
+86,84,"G, E"
+8E,8E,"O, O"
+8D,93,"N, T"
+88,93,"I, T"
+93,8E,"T, O"
+84,50,"E, END"
+50,50,"END, END"
+50,8D,"END, Begin Nidoran (male) nickname (N)"
+8C,88,"Begin Mewtwo nickname (M), I"
+84,83,"E, D"
+96,8E,"W, O"
+93,91,"T, R"
+96,80,"W, A"
+8E,8D,"O, N"
+50,EF,"END, ♂"
+50,50,"END, END"
+50,50,"END, END"
+50,50,"END, END"
+50,8E,"END, Begin Oddish nickanme (O)"
+8C,83,"Begin Mew nickname (M), D"
+84,83,"E, D"
+96,88,"W, I"
+50,92,"END, S"
+50,87,"END, H"
+50,50,"END, END"
+50,50,"END, END"
+50,50,"END, END"
+50,50,"END, END"
+50,50,"END, END"
+50,C0,END
+FF,B0,
+FF,55,
+FF,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+FD,FD,
+00,FD,
+00,00,Polling. Waiting for trade selection
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+FF,00,Byte stuffing/synchronization?
+FF,FF,
+00,FF,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+00,00,
+63,62,"Master selects 4th Pokemon (Dragonite), slave selects third Pokemon (Pikachu)"
+63,62,
+63,62,
+63,62,
+63,00,
+63,00,
+63,FE,
+63,FE,
+63,FE,
+63,FE,
+63,FE,
+63,FE,
+63,FE,
+00,FE,Polling. Waiting for trade confirmation
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+62,FE,Master confirms trade
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,62,Slave confirms trade
+62,62,
+62,00,
+62,00,
+62,00,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+62,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,
+00,FE,

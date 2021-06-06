@@ -27,10 +27,8 @@ class BGBLinkCableServer:
         self._client_data_handler = data_handler
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
-            '''
-            server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY,
-                    1)  # requires nodelay
-            '''
+            # Reduce latency
+            server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
             server.bind((self.host, self.port))
             server.listen(0)  # One Game Boy to rule them all
