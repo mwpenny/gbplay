@@ -27,7 +27,7 @@ class SerialLinkCableServer:
         with serial.Serial(**self._serial_config) as link:
             # Wait for boot
             link.read()
-            print('Serial link connected')
+            print(f'Serial link connected on {self._serial_config["port"]}')
 
             response = None
             while True:
@@ -46,7 +46,7 @@ class SerialLinkCableClient:
 
         # Wait for boot
         self._link.read()
-        print('Serial link connected')
+        print(f'Serial link connected on {serial_config["port"]}')
 
     def __enter__(self):
         return self
