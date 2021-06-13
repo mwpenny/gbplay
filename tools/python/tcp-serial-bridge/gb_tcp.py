@@ -8,14 +8,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from common.serial_link_cable import SerialLinkCableClient
 from game_protocols import pokemon_gen1
 
-DEFAULT_SERVER_HOST = 'localhost'
 DEFAULT_SERVER_PORT = 1989
 
 # Accepts 2 client connections - one for each Game Boy. Once both have connected,
 # the server will put both into slave mode (by sending game-specific data) to
 # enable high-latency communication and then act as a bridge between them.
 class GBSerialTCPServer:
-    def __init__(self, host=DEFAULT_SERVER_HOST, port=DEFAULT_SERVER_PORT, trace=False):
+    def __init__(self, host='0.0.0.0', port=DEFAULT_SERVER_PORT, trace=False):
         self._host = host
         self._port = port
         self._trace = trace
@@ -80,7 +79,7 @@ class GBSerialTCPServer:
 # Connects to a running GBSerialTCPServer and forwards received data to the
 # serial-connected Game Boy. The Game Boy's response is sent back over TCP.
 class GBSerialTCPClient:
-    def __init__(self, serial_port, server_host=DEFAULT_SERVER_HOST, server_port=DEFAULT_SERVER_PORT):
+    def __init__(self, serial_port, server_host='localhost', server_port=DEFAULT_SERVER_PORT):
         self._serial_port = serial_port
         self._server_host = server_host
         self._server_port = server_port
