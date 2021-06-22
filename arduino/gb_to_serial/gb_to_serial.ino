@@ -42,7 +42,9 @@ void loop()
 {
     while (!Serial.available())
     {
-        delay(100);
+        // Give the Game Boy "enough" time to prepare the next byte
+        // This value is purely anecdotal may need to be adjusted
+        delay(5);
     }
 
     byte tx = Serial.read();
