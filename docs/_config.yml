@@ -1,5 +1,5 @@
 # Deployment config
-baseurl: "/docs"
+baseurl: ""
 url: ""
 
 # Metadata
