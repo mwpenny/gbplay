@@ -1,0 +1,13 @@
+<figure class="centered">
+    <iframe
+        src="https://www.youtube-nocookie.com/embed/{{ include.id }}"
+        width="560"
+        height="315"
+        frameborder="0"
+        allowfullscreen>
+    </iframe>
+
+    {% if include.caption %}
+        <figcaption>{{ include.caption }}</figcaption>
+    {% endif %}
+</figure>

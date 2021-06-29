@@ -1,0 +1,19 @@
+# Deployment config
+baseurl: "/blog"
+url: ""
+
+# Metadata
+title: GBPlay Blog
+description: >-
+  GBPlay aims to enable Game Boy and Game Boy Color multiplayer over the
+  internet using original hardware. It is currently in an early/exploratory
+  stage. Stay tuned for more updates as the project progresses.
+
+# Social links
+rss: RSS Feed
+
+# Theming
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-github-metadata

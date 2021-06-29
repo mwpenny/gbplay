@@ -1,3 +1,6 @@
 .vscode/
 __pycache__/
+blog/.bundle
+blog/_site
+blog/vendor
 test-roms/
