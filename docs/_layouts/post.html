@@ -12,16 +12,17 @@ layout: default
             </time>
 
             {%- if page.author -%}
+                {% assign author = site.data.authors[page.author] | default: page.author %}
                 • <span itemprop="author" itemscope itemtype="http://schema.org/Person">
                     <span class="p-author h-card" itemprop="name">
-                        {%- if page.author.username -%}
-                            <a href="https://github.com/{{page.author.username}}">
-                                {{ page.author.name }}
+                        {%- if author.github -%}
+                            <a href="https://github.com/{{ author.github }}">
+                                {{ author.name }}
                             </a>
-                        {%- elsif page.author.name -%}
-                            {{ page.author.name }}
+                        {%- elsif author.name -%}
+                            {{ author.name }}
                         {%- else -%}
-                            {{ page.author }}
+                            {{ author }}
                         {%- endif -%}
                     </span>
                 </span>

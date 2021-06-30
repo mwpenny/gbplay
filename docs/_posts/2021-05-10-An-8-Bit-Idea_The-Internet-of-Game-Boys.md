@@ -1,10 +1,14 @@
 ---
 layout: post
-title: "An 8-bit Idea: The Internet of Game Boys"
-author:
-   name: Matt Penny
-   username: mwpenny
 
+title: "An 8-bit Idea: The Internet of Game Boys"
+image: /images/dmg_link_cable_port.jpg
+excerpt: >-
+   After coming across an incredibly cool project involving online Game Boy
+   multiplayer, we saw room for several improvements and lots of learning.
+   So we decided to start our own project!
+
+author: matt
 date: 2021-05-10
 ---
 
