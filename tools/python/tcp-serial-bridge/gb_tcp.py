@@ -1,12 +1,13 @@
+import importlib
 import os
 import socket
 import sys
+import time
 
 # Ugliness to do relative imports without a headache
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from common.serial_link_cable import SerialLinkCableClient
-from game_protocols import pokemon_gen1
 
 DEFAULT_SERVER_PORT = 1989
 
@@ -14,7 +15,8 @@ DEFAULT_SERVER_PORT = 1989
 # the server will put both into slave mode (by sending game-specific data) to
 # enable high-latency communication and then act as a bridge between them.
 class GBSerialTCPServer:
-    def __init__(self, host='0.0.0.0', port=DEFAULT_SERVER_PORT, trace=False):
+    def __init__(self, protocol, host='0.0.0.0', port=DEFAULT_SERVER_PORT, trace=False):
+        self._protocol = importlib.import_module(f'game_protocols.{protocol}')
         self._host = host
         self._port = port
         self._trace = trace
@@ -27,6 +29,7 @@ class GBSerialTCPServer:
             server.bind((self._host, self._port))
             server.listen(1)  # Two Game Boys
             print(f'Listening on {self._host}:{self._port}...')
+            print(f'Protocol: {os.path.splitext(os.path.basename(self._protocol.__file__))[0]}')
 
             client1, client1_addr = server.accept()
             print(f'Received connection 1 from {client1_addr[0]}:{client1_addr[1]}')
@@ -43,6 +46,13 @@ class GBSerialTCPServer:
                         self._enter_slave_mode(client2)
                         print('Game Boy 2 entered slave mode')
 
+                        # Trigger game start, if needed
+                        start_sequence = self._protocol.get_start_sequence()
+                        if start_sequence:
+                            for b in start_sequence:
+                                gb1_byte = self._exchange_byte(client1, b)
+                                self._exchange_byte(client2, b)
+
                         # Start the ping-ponging a la Newton's cradle
                         while True:
                             gb2_byte = self._exchange_byte(client2, gb1_byte)
@@ -54,13 +64,20 @@ class GBSerialTCPServer:
             except Exception as e:
                 print('Socket error:', str(e))
 
-    def _exchange_byte(self, client, byte):
+    def _exchange_byte(self, client, byte, delay_ms=None):
+        if delay_ms is None:
+            delay_ms = self._protocol.get_default_send_delay_ms()
+
         client.sendall(bytearray([byte]))
-        return client.recv(1)[0]
+        result = client.recv(1)[0]
+
+        # Different games need different amounts of time to prepare the next byte
+        time.sleep(delay_ms / 1000)
+
+        return result
 
     def _enter_slave_mode(self, client):
-        # TODO: other games
-        link_initializer = pokemon_gen1.get_link_initializer()
+        link_initializer = self._protocol.get_link_initializer()
 
         # Initiate link cable connection such that game will use external clock
         response = None
@@ -70,7 +87,7 @@ class GBSerialTCPServer:
                 # Initialized
                 return link_initializer.last_byte_received
 
-            response = self._exchange_byte(client, to_send)
+            response = self._exchange_byte(client, to_send, link_initializer.get_send_delay_ms())
 
             if self._trace:
                 print(f'{to_send:02X},{response:02X}')

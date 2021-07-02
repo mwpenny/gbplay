@@ -7,6 +7,7 @@ arg_parser = argparse.ArgumentParser(description='Links 2 Game Boys via a serial
 arg_subparsers = arg_parser.add_subparsers(dest='mode', required=True, help='Operation modes')
 
 server_parser = arg_subparsers.add_parser('server', help='Run TCP server')
+server_parser.add_argument('--protocol', required=True, type=str, help='name of game protocol (see game_protocols folder)')
 server_parser.add_argument('--trace', default=False, action='store_true', help='enable communication logging')
 server_parser.add_argument('--host', type=str, help='host to listen on')
 server_parser.add_argument('--port', type=int, help='port to listen on')
@@ -17,6 +18,7 @@ client_parser.add_argument('--server-port', type=int, help='server port to conne
 client_parser.add_argument('serial_port', type=str, help='serial port of the Game Boy')
 
 local_parser = arg_subparsers.add_parser('local', help='Run TCP server and a client for each Game Boy')
+local_parser.add_argument('--protocol', required=True, type=str, help='name of game protocol (see game_protocols folder)')
 local_parser.add_argument('--trace', default=False, action='store_true', help='enable communication logging')
 local_parser.add_argument('gb1_port', type=str, help='serial port of the first Game Boy')
 local_parser.add_argument('gb2_port', type=str, help='serial port of the second Game Boy')
@@ -24,7 +26,7 @@ local_parser.add_argument('gb2_port', type=str, help='serial port of the second 
 args = arg_parser.parse_args()
 
 if args.mode == 'server':
-    kwargs = { 'trace': args.trace } | {
+    kwargs = { 'protocol': args.protocol, 'trace': args.trace } | {
         k: getattr(args, k) for k in ['host', 'port']
         if getattr(args, k) is not None
     }
@@ -36,7 +38,7 @@ elif args.mode == 'client':
     }
     GBSerialTCPClient(**kwargs).connect()
 elif args.mode == 'local':
-    server = GBSerialTCPServer(trace=args.trace)
+    server = GBSerialTCPServer(args.protocol, trace=args.trace)
     gb1_client = GBSerialTCPClient(args.gb1_port)
     gb2_client = GBSerialTCPClient(args.gb2_port)
 

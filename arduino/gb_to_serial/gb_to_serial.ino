@@ -40,15 +40,20 @@ byte transfer_byte(byte tx)
 
 void loop()
 {
-    while (!Serial.available())
+    if (!Serial.available())
     {
-        // Give the Game Boy "enough" time to prepare the next byte
-        // This value is purely anecdotal may need to be adjusted
-        delay(5);
+        return;
     }
 
     byte tx = Serial.read();
     byte rx = transfer_byte(tx);
 
     Serial.write(rx);
+
+    // Give the Game Boy "enough" time to prepare the next byte
+    // This value is purely anecdotal may need to be adjusted
+    //
+    // For the final hardware, it should be implemented on the
+    // server side (latency will likely be high enough anyway)
+    delay(5);
 }
