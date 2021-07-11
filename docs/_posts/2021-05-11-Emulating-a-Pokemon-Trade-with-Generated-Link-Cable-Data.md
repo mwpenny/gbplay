@@ -2,11 +2,11 @@
 layout: post
 
 title: "Emulating a Pokemon Trade with Generated Link Cable Data"
-image: /images/pokered_mock_trade.jpg
+image: /images/pokered_mock_trade.png
 excerpt: >-
   Before building an interface to communicate with an original Game Boy, we
   need something to send! So we created tools to mimic a Pokemon trade and
-  and to feed the data to an emulator for testing.
+  to feed the data to an emulator for testing.
 
 author: matt
 date: 2021-05-11
