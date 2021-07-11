@@ -118,7 +118,7 @@ class PokeTrader:
                 self._trade_state = TradeState.TRADE_CANCELLED
                 print('Trade cancelled')
             elif data == self.TRADE_CONFIRMED_MAGIC:
-                self._trade_state = TradeState.NOT_CONNECTED
+                self._trade_state = TradeState.SELECTED_TRADE
                 print('Trade confirmed')
 
         elif self._trade_state == TradeState.TRADE_CANCELLED:
