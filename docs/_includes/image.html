@@ -1,9 +1,9 @@
 <figure class="centered">
-    <a href="{{ include.src | relative_url }}" title="{{ include.caption }}" target="_blank">
+    <a href="{{ include.src | relative_url }}" title="{{ include.caption | markdownify | strip_html | escape }}" target="_blank">
         <img src="{{ include.src | relative_url }}"/>
     </a>
 
     {% if include.caption %}
-        <figcaption>{{ include.caption }}</figcaption>
+        <figcaption>{{ include.caption | markdownify }}</figcaption>
     {% endif %}
 </figure>

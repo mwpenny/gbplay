@@ -12,7 +12,7 @@ layout: default
             </time>
 
             {%- if page.author -%}
-                {% assign author = site.data.authors[page.author] | default: page.author %}
+                {%- assign author = site.data.authors[page.author] | default: page.author -%}
                 • <span itemprop="author" itemscope itemtype="http://schema.org/Person">
                     <span class="p-author h-card" itemprop="name">
                         {%- if author.github -%}

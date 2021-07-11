@@ -143,7 +143,7 @@ edge and sampled on each rising edge. This configuration is known as SPI mode 3.
 {%
    include image.html
    src="/images/gb_spi.png"
-   caption="An example GB SPI transfer. Here, the master sends 0xD9 (217) and the slave sends 0x45 (69)."
+   caption="An example GB SPI transfer. Here, the master sends `0xD9` (`217`) and the slave sends `0x45` (`69`)."
 %}
 
 ### GB SPI and latency
