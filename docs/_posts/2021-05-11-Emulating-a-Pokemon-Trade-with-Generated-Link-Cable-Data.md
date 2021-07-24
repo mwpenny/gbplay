@@ -1,7 +1,7 @@
 ---
 layout: post
 
-title: "Emulating a Pokemon Trade with Generated Link Cable Data"
+title: Emulating a Pokemon Trade with Generated Link Cable Data
 image: /images/pokered_mock_trade.png
 excerpt: >-
   Before building an interface to communicate with an original Game Boy, we
@@ -18,6 +18,7 @@ date: 2021-05-11
     it is easy to link within the post (e.g., "{{ previous_post }}#some-id")
 -->
 {% endcomment %}
+
 {% capture previous_post %}
 {% post_url 2021-05-10-An-8-Bit-Idea_The-Internet-of-Game-Boys %}
 {% endcapture %}
