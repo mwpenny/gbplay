@@ -1,6 +1,6 @@
 # Deployment config
 baseurl: ""
-url: ""
+url: "https://blog.gbplay.io"
 
 # Metadata
 title: GBPlay Blog
