@@ -4,3 +4,5 @@ docs/.bundle
 docs/_site
 docs/vendor
 test-roms/
+esp/GBPlay/build
+esp/GBPlay/build.sh
