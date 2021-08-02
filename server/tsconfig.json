@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    /* Basic options */
+    "target": "esnext",
+    "module": "commonjs",
+    "declaration": false,
+    "outDir": "dist",
+    "rootDir": ".",
+    "noEmitOnError": true,
+    "incremental": true,
+    "sourceMap": true,
+
+    /* Type-checking options */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Language options */
+    "experimentalDecorators": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}

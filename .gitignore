@@ -3,6 +3,10 @@ __pycache__/
 docs/.bundle
 docs/_site
 docs/vendor
-test-roms/
-esp/GBPlay/build
+esp/GBPlay/build/
+esp/GBPlay/build.bat
 esp/GBPlay/build.sh
+esp/GBPlay/esp-cmd.bat
+server/dist/
+server/node_modules/
+test-roms/

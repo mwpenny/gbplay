@@ -35,7 +35,7 @@ class TetrisLinkInitializer:
         ]
 
         # Same algorithm as the original game.
-        # See https://harddrop.com/wiki/Tetris_(Game_Boy) and
+        # See https://harddrop.com/wiki/Tetris_(Game_Boy)#Randomizer and
         # https://github.com/alexsteb/tetris_disassembly/blob/master/main.asm#L1780
         self._pieces = []
         prev_piece1, prev_piece2 = 0, 0

@@ -1,0 +1,29 @@
+{
+  "name": "gbplay-server",
+  "version": "0.0.1",
+  "description": "Backend server for internet-enabled GB/GBC multiplayer",
+  "main": "dist/server.js",
+  "files": [
+    "/dist"
+  ],
+  "devDependencies": {
+    "@types/node": "^16.4.2",
+    "rimraf": "^3.0.2",
+    "tsc-watch": "^4.4.0",
+    "typescript": "^4.3.5"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/src/server.js",
+    "watch": "tsc-watch --onSuccess \"npm run start\"",
+    "clean": "rimraf dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mwpenny/gbplay.git"
+  },
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/mwpenny/gbplay/issues"
+  }
+}
