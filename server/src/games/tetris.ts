@@ -35,8 +35,8 @@ export class TetrisGameSession extends GameSession {
     // TODO: configurable
     private readonly musicType = TetrisCtrlByte.MusicTypeA;
 
-    private client1Wins: number = 0;
-    private client2Wins: number = 0;
+    private client1WinCount: number = 0;
+    private client2WinCount: number = 0;
 
     constructor(id: string) {
         super(id);
@@ -90,8 +90,8 @@ export class TetrisGameSession extends GameSession {
     }
 
     protected reset(): void {
-        this.client1Wins = 0;
-        this.client2Wins = 0;
+        this.client1WinCount = 0;
+        this.client2WinCount = 0;
     }
 
     @stateHandler(TetrisGameState.WaitingForPlayers)
@@ -172,31 +172,50 @@ export class TetrisGameSession extends GameSession {
         this.state = TetrisGameState.Playing;
     }
 
-    // TODO: handle tie games
     @stateHandler(TetrisGameState.Playing)
     async handlePlaying() {
         // We can't send the game anything right away or it will freeze
         await sleep(500);
 
-        let gameOver = false;
+        let roundOver = false;
 
-        while (!gameOver) {
+        let client1StatusByte = 0;
+        let client2StatusByte = 0;
+
+        const isGameEndingByte = (b: number) => {
+            return b === TetrisCtrlByte.Win || b === TetrisCtrlByte.Lose;
+        };
+
+        while (!roundOver) {
             await this.clients[0].forwardByte(this.clients[1], (client1Byte: number, client2Byte: number) => {
-                if (client1Byte === TetrisCtrlByte.Win || client2Byte === TetrisCtrlByte.Lose) {
-                    ++this.client1Wins;
-                    gameOver = true;
-                } else if (client2Byte === TetrisCtrlByte.Win || client1Byte === TetrisCtrlByte.Lose) {
-                    ++this.client2Wins;
-                    gameOver = true;
+                if (isGameEndingByte(client1Byte)) {
+                    client1StatusByte = client1Byte;
+                }
+                if (isGameEndingByte(client2Byte)) {
+                    client2StatusByte = client2Byte;
+                }
+
+                if (client1Byte === TetrisCtrlByte.ReadyForRoundEnd &&
+                    client2Byte === TetrisCtrlByte.ReadyForRoundEnd) {
+                    roundOver = true;
                 }
             });
         }
 
-        // Dramtic effect
-        await sleep(2000);
+        let roundEndPollByte = TetrisCtrlByte.Poll;
+
+        if (client1StatusByte === client2StatusByte) {
+            // Draw. Notify clients in round end polling phase.
+            roundEndPollByte = client1StatusByte;
+        } else if (client1StatusByte === TetrisCtrlByte.Win ||
+                   client2StatusByte === TetrisCtrlByte.Lose) {
+            ++this.client1WinCount;
+        } else {
+            ++this.client2WinCount;
+        }
 
         await this.forAllClients(async c => {
-            await c.waitForByte(TetrisCtrlByte.Poll, TetrisCtrlByte.ReadyForRoundEnd);
+            await c.waitForByte(roundEndPollByte, TetrisCtrlByte.ReadyForRoundEnd);
             return c.exchangeByte(TetrisCtrlByte.BeginRoundOverScreen);
         });
 
@@ -211,7 +230,7 @@ export class TetrisGameSession extends GameSession {
         let expectedByte: number;
         let nextState: TetrisGameState;
 
-        if (this.client1Wins < 4 && this.client2Wins < 4) {
+        if (this.client1WinCount < 4 && this.client2WinCount < 4) {
             // New round
             expectedByte = TetrisCtrlByte.Slave;
             nextState = TetrisGameState.SendingInitializationData;
