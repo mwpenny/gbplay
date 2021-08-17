@@ -68,7 +68,7 @@ what the officially-licensed
 This is all very impressive but there are a few limitations: it only supports
 Tetris and in order to play you need to be sitting at your computer using a
 hard-wired connection. This is a handheld console! Furthermore, stacksmashing
-didn't flesh out the hardware too much beyond the proof-of-concept stage, which
+didn't flesh out the hardware too much beyond the proof of concept stage, which
 isn't the easiest to share with non-technical friends.
 
 Being on the lookout for new side project ideas, we couldn't resist.

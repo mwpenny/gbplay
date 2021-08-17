@@ -14,12 +14,12 @@ date: 2021-05-11
 
 {% comment %}
 <!--
-    Doing this with a variable instead of markdown reference link so that
-    it is easy to link within the post (e.g., "{{ previous_post }}#some-id")
+   Doing this with a variable instead of a markdown reference link so that it is
+   easy to link within the post (e.g., "{{ intro_research_post }}#some-id")
 -->
 {% endcomment %}
 
-{% capture previous_post %}
+{% capture intro_research_post %}
 {% post_url 2021-05-10-An-8-Bit-Idea_The-Internet-of-Game-Boys %}
 {% endcapture %}
 
@@ -31,7 +31,7 @@ date: 2021-05-11
 
 ## The need to test
 
-[Last time]({{ previous_post }}), we talked about the online Game Boy link cable
+[Last time]({{ intro_research_post }}), we talked about the online Game Boy link cable
 project we started. After some preliminary research, we ordered all of the
 necessary components (and more) to start experimenting. In order to minimize
 mistakes and confirm that everything continues to operate correctly when changes
@@ -56,8 +56,8 @@ this one is based around Tetris, and understanding the inner-workings of as many
 different games as possible (such as Pokemon) is important for getting a sense
 of how to design our project.
 
-Spoofing a Pokemon trade requires a through understanding of how the game's link
-cable protocol works. Emulation can be used to validate the generated data
+Spoofing a Pokemon trade requires a thorough understanding of how the game's
+link cable protocol works. Emulation can be used to validate the generated data
 without a hardware setup. [BGB](https://bgb.bircd.org/) is a well-known Game
 Boy/Game Boy Color emulator that supports "linking" multiple instances. It can
 also log all of the bytes sent over the emulated link cable connection, which is
@@ -94,7 +94,7 @@ various steps involved in a Pokemon trade.
    caption="Initiating a connection. Choosing roles requires only a few bytes."
 %}
 
-As described in the [previous post]({{ previous_post }}#understanding-the-link-cable-protocol),
+As described in the [previous post]({{ intro_research_post }}#understanding-the-link-cable-protocol),
 when communicating, one Game Boy acts as the master device and provides the
 link's clock signal. Since both consoles will be running identical code, games
 need to include a mechanism for determining which instance will provide the
@@ -226,7 +226,7 @@ functionality -- it's [well-documented](https://bgb.bircd.org/bgblink.html) too!
 All data is encapsulated into 8-byte packets. Four of these bytes always store
 the time at which the packet was sent. This is to enable two instances of the
 emulator to stay in sync. If one is running too far behind, the other can pause
-to allow catch-up (a luxury that's [not possible]({{ previous_post }}#gb-spi-and-latency)
+to allow catch-up (a luxury that's [not possible]({{ intro_research_post }}#gb-spi-and-latency)
 on real hardware).
 
 The packet structure is as follows:

@@ -14,8 +14,8 @@ date: 2021-05-29
 
 {% comment %}
 <!--
-    Doing this variables instead of markdown reference links so that it is easy
-    easy to link within the post (e.g., "{{ post_variable_name }}#some-id")
+   Doing this with variables instead of markdown reference links so that it is
+   easy to link within the post (e.g., "{{ post_variable_name }}#some-id")
 -->
 {% endcomment %}
 
@@ -37,7 +37,7 @@ date: 2021-05-29
 
 Previous posts have described our process of learning about the Game Boy
 hardware and how it's used. At this point, we have a good level of familiarity
-with [how the link cable works]({{ intro_research_post }}) some
+with [how the link cable works]({{ intro_research_post }}), some
 [useful tools]({{ link_emulation_post }}) for experimenting with the connection,
 and some known good data to send. There's been a lot of research, and until now
 we've only talked about how we can use our software tools with an emulator. It's
@@ -280,7 +280,7 @@ support -- and it works too. See the video below.
    caption="Multiplayer Tetris between BGB and a Game Boy \"just works\" out of the box"
 %}
 
-# Future work
+## Future work
 
 This was some great progress! We're able to send arbitrary data between a PC and
 Game Boy -- both programatically and from an emulator. We can use these new
