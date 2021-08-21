@@ -104,13 +104,13 @@ implements role negotiation is extremely simple.
 When visiting the Cable Club at a Pokemon Center, the game will first operate
 in slave mode and wait for a serial transfer to be initiated by the other Game
 Boy (i.e., try to use an external clock signal). If this happens, it will
-respond with the value `2`. If instead no transfers occur after waiting for
-some time, then the game will switch to master mode and repeatedly send the
-value `1` to the other Game Boy (i.e., using an internal clock signal). If the
-master game receives a `2` and the slave game receives a `1` then both
-instances will send a `0` byte to confirm the connection, save the game,
-exchange a `0x60` byte for synchronization, and then display the in-game link
-type selection menu.
+respond with the value `2`. If instead no such transfer occurs, then the game
+will switch to master mode and send the value `1` to the other Game Boy (i.e.,
+using an internal clock signal). This is done in a loop until the connection is
+successful or enough failed attempts take place. If the master game receives a
+`2` and the slave game receives a `1` then both instances will send two `0`
+bytes, save the game, exchange a `0x60` byte for synchronization, and then
+display the in-game link type selection menu.
 
 ### Link type selection
 
@@ -124,11 +124,14 @@ After the link has been established, both players are asked where they would
 like to go -- either the Trade Center (for trades) or Colosseum (for battles)
 -- or they can choose to cancel and close the link. All link cable transfers
 must be initiated by the master, but the game allows either player to select
-the destination. So while on this screen, the master will continually send the
-value `0xD0` to poll the other game, which will also respond with `0xD0` --
-this value signals that no selection has been made. Whichever side the
-selection is made on first will indicate it by sending the associated value
--- `0xD4` for the Trade Center, `0xD5` for the Colosseum, or `0xD6` to cancel.
+the destination. So while on this screen, the master will continually send
+values of the form `0xDx` (where the bottom 2 bits of `x` store the index of the
+highlighted option) to poll the other game, which will respond with a value
+following the same format. Whichever side the selection is made on first will
+indicate it by setting bit 2 of its value: `0xD4` for the Trade Center, `0xD5`
+for the Colosseum, or `0xD6` to cancel. A cancel can also be signaled by setting
+bit 3, which indicates that the B button was pressed on the associated menu
+entry.
 
 For our purposes, we will be faking a trade and will not go into detail on
 how battles work.
