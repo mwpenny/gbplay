@@ -38,14 +38,16 @@ export abstract class GameSession {
 
     private eventEmitter: EventEmitter = new EventEmitter({ captureRejections: true });
     private ended: boolean = false;
+    private requiredClientCount: number;
 
-    constructor(public readonly id: string) {
+    constructor(public readonly id: string, requiredClientCount: number = 2) {
+        this.requiredClientCount = requiredClientCount;
+
         this.eventEmitter.on("error", (error: Error) => {
             console.error(`Unhandled error in ${this.constructor.name} event handler: ${error.message}`);
         });
 
         console.info(`Created new ${this.constructor.name} with ID '${this.id}'.`);
-        this.reset();
     }
 
     private async handleState(state: number): Promise<any> {
@@ -70,9 +72,26 @@ export abstract class GameSession {
     }
 
     /**
-     * Resets the game back state back to its initial values.
+     * Returns whether or not enough clients to start the game have joined.
      */
-    protected abstract reset(): void;
+    protected requiredClientsHaveJoined(): boolean {
+        return this.clients.length >= this.requiredClientCount;
+    }
+
+    /**
+     * Exchanges a byte between session clients, as if the two devices were
+     * physically connected.
+     * @param onTransfer Optional callback to intercept the transferred values
+     */
+    protected forwardClientBytes(onTransfer?: (b1: number, b2: number) => void): Promise<void> {
+        if (this.clients.length !== this.requiredClientCount) {
+            throw new Error(
+                `Cannot forward bytes with ${this.clients.length} clients. ` +
+                `Expected ${this.requiredClientCount}.`
+            );
+        }
+        return this.clients[0].forwardByte(this.clients[1], onTransfer);
+    }
 
     /**
      * Adds a listener for the specified event.
@@ -104,7 +123,7 @@ export abstract class GameSession {
      * Returns whether or not clients are allowed to join the session.
      */
     isJoinable(): boolean {
-        return !this.ended && this.clients.length < 2;
+        return !this.ended && !this.requiredClientsHaveJoined();
     }
 
     /**

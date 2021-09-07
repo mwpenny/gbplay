@@ -31,6 +31,52 @@ enum TetrisCtrlByte {
     EndRoundOverScreen = 0x79
 };
 
+function generateGarbageLines(): number[] {
+    // Same algorithm as the original game. 50/50 chance of an empty space
+    // versus a filled one. Filled spaces use 1 of 8 different tiles.
+    // See https://github.com/alexsteb/tetris_disassembly/blob/b4bbceb3cc086121ab4fe9bf4dad6752fe956ec0/main.asm#L4604
+    const garbage: number[] = [];
+
+    for (let i = 0; i < 100; ++i) {
+        if (Math.random() >= 0.5) {
+            const tile = Math.floor(Math.random() * 8);
+            garbage.push(tile | TetrisCtrlByte.SolidTile);
+        } else {
+            garbage.push(TetrisCtrlByte.EmptyTile);
+        }
+    }
+
+    return garbage;
+}
+
+function generatePieces(): number[] {
+    // Same algorithm as the original game.
+    // See https://harddrop.com/wiki/Tetris_(Game_Boy)#Randomizer and
+    // https://github.com/alexsteb/tetris_disassembly/blob/b4bbceb3cc086121ab4fe9bf4dad6752fe956ec0/main.asm#L1780
+    const pieces: number[] = [];
+
+    for (let i = 0; i < 256; ++i) {
+        let nextPiece = 0;
+
+        // Don't try forever
+        for (let attempt = 0; attempt < 3; ++attempt) {
+            // 7 choices of pieces, each is a multiple of 4 starting from 0
+            nextPiece = Math.floor(Math.random() * 7) * 4;
+
+            // Try to avoid repeats
+            const prevPiece1 = pieces[i - 1] || 0;
+            const prevPiece2 = pieces[i - 2] || 0;
+            if (((nextPiece | prevPiece1 | prevPiece2) & 0xFC) != prevPiece2) {
+                break;
+            }
+        }
+
+        pieces.push(nextPiece);
+    }
+
+    return pieces;
+}
+
 export class TetrisGameSession extends GameSession {
     // TODO: configurable
     private readonly musicType = TetrisCtrlByte.MusicTypeA;
@@ -43,60 +89,14 @@ export class TetrisGameSession extends GameSession {
         this.state = TetrisGameState.WaitingForPlayers;
     }
 
-    private generateGarbageLines(): number[] {
-        // Same algorithm as the original game. 50/50 chance of an empty space
-        // versus a filled one. Filled spaces use 1 of 8 different tiles.
-        // See https://github.com/alexsteb/tetris_disassembly/blob/master/main.asm#L4604
-        const garbage: number[] = [];
-
-        for (let i = 0; i < 100; ++i) {
-            if (Math.random() >= 0.5) {
-                const tile = Math.floor(Math.random() * 8);
-                garbage.push(tile | TetrisCtrlByte.SolidTile);
-            } else {
-                garbage.push(TetrisCtrlByte.EmptyTile);
-            }
-        }
-
-        return garbage;
-    }
-
-    private generatePieces(): number[] {
-        // Same algorithm as the original game.
-        // See https://harddrop.com/wiki/Tetris_(Game_Boy)#Randomizer and
-        // https://github.com/alexsteb/tetris_disassembly/blob/master/main.asm#L1780
-        const pieces: number[] = [];
-
-        for (let i = 0; i < 256; ++i) {
-            let nextPiece = 0;
-
-            // Don't try forever
-            for (let attempt = 0; attempt < 3; ++attempt) {
-                // 7 choices of pieces, each is a multiple of 4 starting from 0
-                nextPiece = Math.floor((Math.random() * 7)) * 4;
-
-                // Try to avoid repeats
-                const prevPiece1 = pieces[i - 1] || 0;
-                const prevPiece2 = pieces[i - 2] || 0;
-                if (((nextPiece | prevPiece1 | prevPiece2) & 0xFC) != prevPiece2) {
-                    break;
-                }
-            }
-
-            pieces.push(nextPiece);
-        }
-
-        return pieces;
-    }
-
-    protected reset(): void {
+    private reset(): void {
         this.client1WinCount = 0;
         this.client2WinCount = 0;
     }
 
     @stateHandler(TetrisGameState.WaitingForPlayers)
     handleWaitingForPlayers() {
-        if (this.clients.length === 2) {
+        if (this.requiredClientsHaveJoined()) {
             this.state = TetrisGameState.PlayersConnected;
         }
     }
@@ -127,7 +127,7 @@ export class TetrisGameSession extends GameSession {
         // Neither player has the ability to confirm difficulty, so
         // do it automatically after changes have stopped occurring
         while ((Date.now() - lastDifficultyChangeTime) < 5000) {
-            await this.clients[0].forwardByte(this.clients[1], (client1Byte: number, client2Byte: number) => {
+            await this.forwardClientBytes((client1Byte: number, client2Byte: number) => {
                 if (client1Byte !== client1Difficulty || client2Byte !== client2Difficulty) {
                     client1Difficulty = client1Byte;
                     client2Difficulty = client2Byte;
@@ -145,8 +145,8 @@ export class TetrisGameSession extends GameSession {
 
     @stateHandler(TetrisGameState.SendingInitializationData)
     async handleSendingInitializationData() {
-        const garbageLineData = this.generateGarbageLines();
-        const pieceData = this.generatePieces();
+        const garbageLineData = generateGarbageLines();
+        const pieceData = generatePieces();
 
         // Send global data
         await this.forAllClients(async c => {
@@ -187,7 +187,7 @@ export class TetrisGameSession extends GameSession {
         };
 
         while (!roundOver) {
-            await this.clients[0].forwardByte(this.clients[1], (client1Byte: number, client2Byte: number) => {
+            await this.forwardClientBytes((client1Byte: number, client2Byte: number) => {
                 if (isGameEndingByte(client1Byte)) {
                     client1StatusByte = client1Byte;
                 }
