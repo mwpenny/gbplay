@@ -8,6 +8,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from common.serial_link_cable import SerialLinkCableClient
+from common.bgb_link_cable_server import BGBLinkCableServer
 
 DEFAULT_SERVER_PORT = 1989
 
@@ -118,3 +119,40 @@ class GBSerialTCPClient:
 
                     gb_byte = gb_link.send(rx[0])
                     tcp_link.sendall(bytearray([gb_byte]))
+
+
+# Forwards link cable data between BGB and a GBSerialTCPServer
+class BGBProxyTCPClient:
+    def __init__(self, server_host='localhost', server_port=DEFAULT_SERVER_PORT, listen_port=8765):
+        self._server_host = server_host
+        self._server_port = server_port
+        self._listen_port = listen_port
+        self._connected = False
+
+    def connect(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_link:
+            # Reduce latency
+            tcp_link.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+            def on_client_data(data):
+                if not self._connected:
+                    # Connect lazily on the first transfer so that we won't
+                    # connect to the TCP server before the BGB server has
+                    # received a connection
+                    tcp_link.connect((self._server_host, self._server_port))
+                    print(f'Connected to {self._server_host}:{self._server_port}...')
+                    self._connected = True
+                elif data is not None:
+                    tcp_link.sendall(bytearray([data]))
+
+                rx = tcp_link.recv(1)
+                if not rx:
+                    raise Exception('Connection closed by server')
+
+                # Give the emulated Game Boy "enough" time to prepare the next
+                # byte. This value is purely anecdotal may need to be adjusted
+                time.sleep(0.005)
+                return rx[0]
+
+            server = BGBLinkCableServer(port=self._listen_port, is_master=True)
+            server.run(on_client_data)

@@ -7,7 +7,7 @@ class BGBLinkCableServer:
     PACKET_FORMAT = '<4BI'
     PACKET_SIZE_BYTES = 8
 
-    def __init__(self, verbose=False, host='', port=8765):
+    def __init__(self, verbose=False, host='', port=8765, is_master=False):
         self._handlers = {
             1: self._handle_version,
             101: self._handle_joypad_update,
@@ -22,6 +22,7 @@ class BGBLinkCableServer:
         self.verbose = verbose
         self.host = host
         self.port = port
+        self.is_master = is_master
 
     def run(self, data_handler):
         self._client_data_handler = data_handler
@@ -83,20 +84,41 @@ class BGBLinkCableServer:
 
     def _handle_sync1(self, data, _control, _b4):
         # Data received from master
-        response = self._client_data_handler(data)
-        if response is not None:
+        if not self.is_master:
+            response = self._client_data_handler(data)
+            if response is not None:
+                return struct.pack(
+                    self.PACKET_FORMAT,
+                    105,        # Slave data packet
+                    response,   # Data value
+                    0x81,       # Control value
+                    0,          # Unused
+                    self._last_received_timestamp
+                )
+        else:
+            # No response, since we are master
             return struct.pack(
                 self.PACKET_FORMAT,
-                105,        # Slave data packet
-                response,   # Data value
-                0x81,       # Control value
-                0,          # Unused
-                self._last_received_timestamp
+                106,    # Sync3 packet
+                1,
+                0,
+                0,
+                0
             )
 
-    def _handle_sync2(self, _data, _control, _b4):
-        # Data received from slave. We will only act as slave.
-        pass
+    def _handle_sync2(self, data, _control, _b4):
+        # Data received from slave
+        if self.is_master:
+            response = self._client_data_handler(data)
+            if response is not None:
+                return struct.pack(
+                    self.PACKET_FORMAT,
+                    104,        # Master data packet
+                    response,   # Data value
+                    0x81,       # Control value
+                    0,          # Unused
+                    self._last_received_timestamp
+                )
 
     def _handle_sync3(self, b2, b3, b4):
         if self.verbose:
