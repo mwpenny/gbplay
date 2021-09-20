@@ -2,6 +2,7 @@ import importlib
 import os
 import socket
 import sys
+import threading
 import time
 
 # Ugliness to do relative imports without a headache
@@ -134,25 +135,31 @@ class BGBProxyTCPClient:
             # Reduce latency
             tcp_link.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-            def on_client_data(data):
+            server = BGBLinkCableServer(port=self._listen_port)
+
+            def wait_for_master_data():
+                while True:
+                    rx = tcp_link.recv(1)
+                    if not rx:
+                        print('Connection closed by server')
+                        server.stop()
+                        return
+
+                    # Give the emulated Game Boy "enough" time to prepare the next
+                    # byte. This value is purely anecdotal may need to be adjusted
+                    time.sleep(0.005)
+                    server.send_master_byte(rx[0])
+
+            def on_slave_data(data):
                 if not self._connected:
                     # Connect lazily on the first transfer so that we won't
                     # connect to the TCP server before the BGB server has
                     # received a connection
                     tcp_link.connect((self._server_host, self._server_port))
                     print(f'Connected to {self._server_host}:{self._server_port}...')
+                    threading.Thread(target=wait_for_master_data).start()
                     self._connected = True
-                elif data is not None:
-                    tcp_link.sendall(bytearray([data]))
 
-                rx = tcp_link.recv(1)
-                if not rx:
-                    raise Exception('Connection closed by server')
+                tcp_link.sendall(bytearray([data]))
 
-                # Give the emulated Game Boy "enough" time to prepare the next
-                # byte. This value is purely anecdotal may need to be adjusted
-                time.sleep(0.005)
-                return rx[0]
-
-            server = BGBLinkCableServer(port=self._listen_port, is_master=True)
-            server.run(on_client_data)
+            server.run(slave_data_handler=on_slave_data)

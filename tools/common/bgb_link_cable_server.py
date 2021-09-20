@@ -1,5 +1,6 @@
 import socket
 import struct
+import threading
 
 # Implements the BGB link cable protocol
 # See https://bgb.bircd.org/bgblink.html
@@ -7,7 +8,7 @@ class BGBLinkCableServer:
     PACKET_FORMAT = '<4BI'
     PACKET_SIZE_BYTES = 8
 
-    def __init__(self, verbose=False, host='', port=8765, is_master=False):
+    def __init__(self, verbose=False, host='', port=8765):
         self._handlers = {
             1: self._handle_version,
             101: self._handle_joypad_update,
@@ -18,14 +19,16 @@ class BGBLinkCableServer:
             109: self._handle_want_disconnect
         }
         self._last_received_timestamp = 0
+        self._is_running = False
+        self._connection_lock = threading.Lock()
 
         self.verbose = verbose
         self.host = host
         self.port = port
-        self.is_master = is_master
 
-    def run(self, data_handler):
-        self._client_data_handler = data_handler
+    def run(self, master_data_handler=None, slave_data_handler=None):
+        self._master_data_handler = master_data_handler
+        self._slave_data_handler = slave_data_handler
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
             # Reduce latency
@@ -38,19 +41,21 @@ class BGBLinkCableServer:
             connection, client_addr = server.accept()
             print(f'Received connection from {client_addr[0]}:{client_addr[1]}')
 
+            with self._connection_lock:
+                self._connection = connection
+                self._is_running = True
+
             with connection:
                 try:
                     # Initial handshake - send protocol version number
-                    connection.send(struct.pack(
-                        self.PACKET_FORMAT,
+                    self._send_packet(
                         1,  # Version packet
                         1,  # Major
                         4,  # Minor
-                        0,  # Patch
-                        0   # Timestamp
-                    ))
+                        0   # Patch
+                    )
 
-                    while True:
+                    while self.is_running():
                         data = connection.recv(self.PACKET_SIZE_BYTES)
                         if not data:
                             print('Connection dropped')
@@ -59,15 +64,28 @@ class BGBLinkCableServer:
                         b1, b2, b3, b4, timestamp = struct.unpack(self.PACKET_FORMAT, data)
 
                         # Cheat, and say we are exactly in sync with the client
-                        self._last_received_timestamp = timestamp
+                        if timestamp > self._last_received_timestamp:
+                            self._last_received_timestamp = timestamp
 
                         handler = self._handlers[b1]
-                        response = handler(b2, b3, b4)
-
-                        if response:
-                            connection.send(response)
+                        handler(b2, b3, b4)
                 except Exception as e:
                     print('Socket error:', str(e))
+
+    def is_running(self):
+        with self._connection_lock:
+            return self._is_running
+
+    def stop(self):
+        with self._connection_lock:
+            self._is_running = False
+
+    def send_master_byte(self, data):
+        self._send_packet(
+            104,   # Master data packet
+            data,  # Data value
+            0x81   # Control value
+        )
 
     def _handle_version(self, major, minor, patch):
         if self.verbose:
@@ -76,7 +94,7 @@ class BGBLinkCableServer:
         if (major, minor, patch) != (1, 4, 0):
             raise Exception(f'Unsupported protocol version {major}.{minor}.{patch}')
 
-        return self._get_status_packet()
+        self._send_status_packet()
 
     def _handle_joypad_update(self, _b2, _b3, _b4):
         # Do nothing. This is intended to control an emulator remotely.
@@ -84,54 +102,42 @@ class BGBLinkCableServer:
 
     def _handle_sync1(self, data, _control, _b4):
         # Data received from master
-        if not self.is_master:
-            response = self._client_data_handler(data)
+        handler = self._master_data_handler
+
+        if handler:
+            response = handler(data)
             if response is not None:
-                return struct.pack(
-                    self.PACKET_FORMAT,
-                    105,        # Slave data packet
-                    response,   # Data value
-                    0x81,       # Control value
-                    0,          # Unused
-                    self._last_received_timestamp
+                self._send_packet(
+                    105,       # Slave data packet
+                    response,  # Data value
+                    0x81       # Control value
                 )
         else:
-            # No response, since we are master
-            return struct.pack(
-                self.PACKET_FORMAT,
-                106,    # Sync3 packet
-                1,
-                0,
-                0,
-                0
+            # Indicates no response from the GB
+            self._send_packet(
+                106,  # Sync3 packet
+                1
             )
 
     def _handle_sync2(self, data, _control, _b4):
         # Data received from slave
-        if self.is_master:
-            response = self._client_data_handler(data)
-            if response is not None:
-                return struct.pack(
-                    self.PACKET_FORMAT,
-                    104,        # Master data packet
-                    response,   # Data value
-                    0x81,       # Control value
-                    0,          # Unused
-                    self._last_received_timestamp
-                )
+        handler = self._slave_data_handler
+
+        if handler:
+            response = handler(data)
+            if response:
+                self.send_master_byte(response)
 
     def _handle_sync3(self, b2, b3, b4):
         if self.verbose:
             print('Received sync3 packet')
 
         # Ack/echo
-        return struct.pack(
-            self.PACKET_FORMAT,
-            106,    # Sync3 packet
+        self._send_packet(
+            106,  # Sync3 packet
             b2,
             b3,
-            b4,
-            self._last_received_timestamp
+            b4
         )
 
     def _handle_status(self, b2, _b3, _b4):
@@ -142,19 +148,33 @@ class BGBLinkCableServer:
             print('\tPaused:', (b2 & 2) == 2)
             print('\tSupports reconnect:', (b2 & 4) == 4)
 
-        # The docs say not to respond to status with status,
-        # but not doing this causes link instability
-        return self._get_status_packet()
+        # The docs say not to respond to status with status, but not doing this
+        # causes link instability. An alternative is to send sync3 packets
+        # periodically, but this way is easier.
+        self._send_status_packet()
 
     def _handle_want_disconnect(self, _b2, _b3, _b4):
         print('Client has initiated disconnect')
 
-    def _get_status_packet(self):
-        return struct.pack(
-            self.PACKET_FORMAT,
-            108,    # Status packet
-            1,      # State=running
-            0,      # Unused
-            0,      # Unused
-            self._last_received_timestamp
+    def _send_status_packet(self):
+        self._send_packet(
+            108,  # Status packet
+            1     # State=running
         )
+
+    def _send_packet(self, type, b2=0, b3=0, b4=0, i1=None):
+        if i1 is None:
+            i1 = self._last_received_timestamp
+
+        with self._connection_lock:
+            try:
+                if not self._is_running:
+                    raise Exception('Server is not running')
+
+                self._connection.send(struct.pack(
+                    self.PACKET_FORMAT,
+                    type, b2, b3, b4, i1
+                ))
+            except Exception as e:
+                print('Socket error:', str(e))
+                self._running = False
