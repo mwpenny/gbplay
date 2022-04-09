@@ -2,32 +2,32 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "esp_pthread.h"
-#include "driver/gpio.h"
-#include "esp_log.h"
-#include "sdkconfig.h"
-#include "nvs_flash.h"
-#include "esp_http_client.h"
-#include "esp_netif.h"
-#include "esp_tls.h"
-#include "esp_crt_bundle.h"
-#include "esp_console.h"
-#include "esp_vfs_dev.h"
-#include "driver/uart.h"
-#include "linenoise/linenoise.h"
-#include "argtable3/argtable3.h"
-#include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/event_groups.h>
+#include <esp_system.h>
+#include <esp_wifi.h>
+#include <esp_event.h>
+#include <esp_pthread.h>
+#include <driver/gpio.h>
+#include <esp_log.h>
+#include <sdkconfig.h>
+#include <nvs_flash.h>
+#include <esp_http_client.h>
+#include <esp_netif.h>
+#include <esp_tls.h>
+#include <esp_crt_bundle.h>
+#include <esp_console.h>
+#include <esp_vfs_dev.h>
+#include <driver/uart.h>
+#include <linenoise/linenoise.h>
+#include <argtable3/argtable3.h>
+#include <soc/soc.h>
+#include <soc/rtc_cntl_reg.h>
 
 
 #define BLINK_GPIO 5
-#define CONFIG_CONSOLE_MAX_COMMAND_LINE_LENGTH 40
+#define CONFIG_CONSOLE_MAX_COMMAND_LINE_LENGTH 1024
 
 // WiFi connec tion values
 #define WIFI_CONNECTED_BIT BIT0
@@ -522,7 +522,7 @@ int wifi_connect(int argc, char **argv){
 
 void register_wifi_connect(void){
 
-    wifi_credentials.SSID = arg_str0(NULL, NULL, NULL, NULL);
+    wifi_credentials.SSID = arg_str1(NULL, NULL, NULL, NULL);
     wifi_credentials.SSID_PASS = arg_str1(NULL, NULL, NULL, NULL);
     wifi_credentials.end = arg_end(1);
 
