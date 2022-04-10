@@ -214,7 +214,7 @@ bool wifi_connect(const char* ssid, const char* password)
     if (ssid_len > max_ssid_len || pass_len > max_pass_len)
     {
         // This should never happen since SSIDs come from the hardware
-        // and passwords are be validated at the client layer
+        // and passwords are validated at the client layer
         ESP_LOGE(
             __func__,
             "Wi-Fi configuration out of bounds. SSID length: %d, password length: %d",

@@ -22,6 +22,4 @@ bool wifi_connect(const char* ssid, const char* password);
 void wifi_disconnect();
 bool wifi_is_connected();
 
-// TODO: save and load config
-
 #endif
