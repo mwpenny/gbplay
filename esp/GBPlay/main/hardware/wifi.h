@@ -4,7 +4,15 @@
 #include <stdint.h>
 
 // Per 802.11 spec
-#define WIFI_MAX_SSID_LENGTH 32
+#define WIFI_MAX_SSID_LENGTH        32
+
+#define WIFI_MINIMUM_RSSI          -80
+#define WIFI_WEAK_RSSI_THRESHOLD   -70
+#define WIFI_MED_RSSI_THRESHOLD    -60
+#define WIFI_STRONG_RSSI_THRESHOLD -50
+
+#define WIFI_MAX_SAVED_NETWORKS     3
+
 
 // Defining our own type to keep this interface generic
 // TODO: multiple authentication types
@@ -12,6 +20,7 @@ typedef struct {
     char ssid[WIFI_MAX_SSID_LENGTH + 1];
     int8_t channel;
     int8_t rssi;
+    bool requires_password;
 } wifi_ap_info;
 
 void wifi_initialize();

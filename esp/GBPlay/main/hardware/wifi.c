@@ -152,31 +152,36 @@ void wifi_scan(wifi_ap_info* ap_list, uint16_t* ap_count)
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(ap_count, temp_ap_list));
 
     // Convert result from internal format to public-facing one
+    uint16_t total_aps_returned = 0;
     for (int i = 0; i < *ap_count; ++i)
     {
         wifi_ap_record_t* src = &temp_ap_list[i];
         wifi_ap_info* dst = &ap_list[i];
+
+        if (src->rssi < WIFI_MINIMUM_RSSI)
+        {
+            continue;
+        }
 
         strncpy(dst->ssid, (char*)src->ssid, WIFI_MAX_SSID_LENGTH + 1);
         dst->ssid[WIFI_MAX_SSID_LENGTH] = 0;
 
         dst->rssi = src->rssi;
         dst->channel = src->primary;
+        dst->requires_password = src->authmode != WIFI_AUTH_OPEN;
+
+        ++total_aps_returned;
     }
 
     free(temp_ap_list);
+    *ap_count = total_aps_returned;
 }
 
 bool wifi_connect(const char* ssid, const char* password)
 {
     wifi_disconnect();
 
-    wifi_config_t cfg = {
-        .sta = {
-            // TODO: support more than WPA2
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
-        }
-    };
+    wifi_config_t cfg = { 0 };
 
     int max_ssid_len = sizeof(cfg.sta.ssid);
     int max_pass_len = sizeof(cfg.sta.password);

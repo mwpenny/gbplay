@@ -34,7 +34,8 @@ static int _wifi_scan(int argc, char** argv)
     {
         ESP_LOGI(__func__, "SSID \t\t%s", ap_info[i].ssid);
         ESP_LOGI(__func__, "CHANNEL \t\t%d", ap_info[i].channel);
-        ESP_LOGI(__func__, "RSSI \t\t%d\n", ap_info[i].rssi);
+        ESP_LOGI(__func__, "RSSI \t\t%d", ap_info[i].rssi);
+        ESP_LOGI(__func__, "SECURE \t\t%d\n", ap_info[i].requires_password);
     }
 
     return 0;
