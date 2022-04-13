@@ -5,8 +5,8 @@
 #include <unistd.h>
 
 #include "commands.h"
-#include "storage.h"
-#include "wifi.h"
+#include "hardware/storage.h"
+#include "hardware/wifi.h"
 
 #define CONFIG_CONSOLE_MAX_COMMAND_LINE_LENGTH 1024
 

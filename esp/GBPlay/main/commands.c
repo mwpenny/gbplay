@@ -3,8 +3,8 @@
 #include <esp_log.h>
 
 #include "http.h"
-#include "storage.h"
-#include "wifi.h"
+#include "hardware/storage.h"
+#include "hardware/wifi.h"
 
 #define DEFAULT_SCAN_LIST_SIZE 10
 #define SSID_STORAGE_KEY "wifi_ssid"
