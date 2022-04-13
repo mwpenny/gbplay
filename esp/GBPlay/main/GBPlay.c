@@ -5,8 +5,11 @@
 #include <unistd.h>
 
 #include "commands.h"
+#include "hardware/led.h"
 #include "hardware/storage.h"
 #include "hardware/wifi.h"
+
+#include "tasks/status_indicator.h"
 
 #define CONFIG_CONSOLE_MAX_COMMAND_LINE_LENGTH 1024
 
@@ -28,20 +31,31 @@ void init_console()
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }
 
+void start_tasks()
+{
+    task_status_indicator_start();
+}
+
 void app_main()
 {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);  // Disable brownout detector
 
     esp_event_loop_create_default();
 
+    // Initialize hardware
+    led_initialize();
     storage_initialize();
     wifi_initialize();
 
+    // Initialize REPL
     init_console();
+
+    // Let's-a-go
+    start_tasks();
 
     while (true)
     {
-        usleep(1000 * 1000);
+        sleep(1);
     }
 
     wifi_deinitialize();

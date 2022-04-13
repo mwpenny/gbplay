@@ -1,14 +1,11 @@
-#include <pthread.h>
 #include <string.h>
 
-#include <driver/gpio.h>
 #include <esp_log.h>
 #include <esp_wifi.h>
 #include <freertos/event_groups.h>
 
 #include "wifi.h"
 
-#define STATUS_LED_GPIO 2
 #define MAX_CONNECTION_RETRY_COUNT 3
 
 typedef enum {
@@ -17,8 +14,6 @@ typedef enum {
 } WifiConnectionStatus;
 
 static volatile bool is_connected = false;
-static volatile bool led_update_thread_running = true;
-static pthread_t led_update_thread;
 
 static esp_netif_t* default_iface = NULL;
 
@@ -29,21 +24,6 @@ static int connection_retry_count = 0;
 static void _set_connection_status(bool connected)
 {
     is_connected = connected;
-}
-
-static void* _update_led(void* arg)
-{
-    bool led_on = false;
-
-    while (led_update_thread_running)
-    {
-        // Blink if not connected
-        led_on = is_connected || !led_on;
-        gpio_set_level(STATUS_LED_GPIO, led_on);
-        sleep(1);
-    }
-
-    return NULL;
 }
 
 static void _on_wifi_event(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
@@ -121,13 +101,8 @@ static void _on_ip_event(void* arg, esp_event_base_t event_base, int32_t event_i
 
 void wifi_initialize()
 {
-    pthread_create(&led_update_thread, NULL, _update_led, NULL);
-
     wifi_event_group = xEventGroupCreate();
 
-    // Status indicator
-    gpio_reset_pin(STATUS_LED_GPIO);
-    gpio_set_direction(STATUS_LED_GPIO, GPIO_MODE_OUTPUT);
     _set_connection_status(false);
 
     // Init TCP/IP stack
@@ -161,9 +136,6 @@ void wifi_deinitialize()
     ESP_ERROR_CHECK(esp_netif_deinit());
 
     vEventGroupDelete(wifi_event_group);
-
-    led_update_thread_running = false;
-    pthread_join(led_update_thread, NULL);
 }
 
 void wifi_scan(wifi_ap_info* ap_list, uint16_t* ap_count)
