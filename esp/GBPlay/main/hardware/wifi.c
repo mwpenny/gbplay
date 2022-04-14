@@ -4,14 +4,24 @@
 #include <esp_wifi.h>
 #include <freertos/event_groups.h>
 
+#include "storage.h"
 #include "wifi.h"
 
 #define MAX_CONNECTION_RETRY_COUNT 3
+
+#define WIFI_SAVED_NETWORKS_STORAGE_KEY "wifi_networks"
 
 typedef enum {
     CONNECTION_FAIL    = 1,
     CONNECTION_SUCCESS = 2
 } WifiConnectionStatus;
+
+typedef struct {
+    wifi_network_credentials networks[WIFI_MAX_SAVED_NETWORKS];
+    int count;
+} wifi_saved_network_info;
+
+static wifi_saved_network_info s_saved_networks = {0};
 
 static volatile bool is_connected = false;
 
@@ -101,6 +111,14 @@ static void _on_ip_event(void* arg, esp_event_base_t event_base, int32_t event_i
 
 void wifi_initialize()
 {
+    // Load previously saved credentials
+    void* saved_networks = storage_get_blob(WIFI_SAVED_NETWORKS_STORAGE_KEY);
+    if (saved_networks)
+    {
+        memcpy(&s_saved_networks, saved_networks, sizeof(s_saved_networks));
+        free(saved_networks);
+    }
+
     wifi_event_group = xEventGroupCreate();
 
     _set_connection_status(false);
@@ -230,4 +248,103 @@ bool wifi_is_connected()
     //wifi_ap_record_t ap_info = { 0 };
     //return esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK;
     return is_connected;
+}
+
+static void wifi_flush_saved_networks()
+{
+    storage_set_blob(
+        WIFI_SAVED_NETWORKS_STORAGE_KEY,
+        &s_saved_networks,
+        sizeof(s_saved_networks)
+    );
+}
+
+int wifi_saved_network_count()
+{
+    return s_saved_networks.count;
+}
+
+wifi_network_credentials* wifi_get_saved_network(const char* ssid)
+{
+    for (int i = 0; i < s_saved_networks.count; ++i)
+    {
+        wifi_network_credentials* ap = &s_saved_networks.networks[i];
+        if (strcmp(ap->ssid, ssid) == 0)
+        {
+            return ap;
+        }
+    }
+
+    return NULL;
+}
+
+wifi_network_credentials* wifi_get_saved_network_by_index(int index)
+{
+    if (index < 0 || index >= s_saved_networks.count)
+    {
+        return NULL;
+    }
+
+    return &s_saved_networks.networks[index];
+}
+
+bool wifi_save_network(const char* ssid, const char* password)
+{
+    wifi_network_credentials* existing = wifi_get_saved_network(ssid);
+    if (existing)
+    {
+        strncpy(existing->pass, password, WIFI_MAX_PASS_LENGTH);
+        existing->pass[WIFI_MAX_PASS_LENGTH] = '\0';
+
+        wifi_flush_saved_networks();
+
+        return true;
+    }
+    else if (s_saved_networks.count < WIFI_MAX_SAVED_NETWORKS)
+    {
+        wifi_network_credentials* ap = &s_saved_networks.networks[s_saved_networks.count];
+
+        strncpy(ap->ssid, ssid, WIFI_MAX_SSID_LENGTH);
+        ap->ssid[WIFI_MAX_SSID_LENGTH] = '\0';
+
+        strncpy(ap->pass, password, WIFI_MAX_PASS_LENGTH);
+        ap->pass[WIFI_MAX_PASS_LENGTH] = '\0';
+
+        ++s_saved_networks.count;
+        wifi_flush_saved_networks();
+
+        return true;
+    }
+
+    // No room. Should have checked and cleared a spot first.
+    return false;
+}
+
+void wifi_forget_network(const char* ssid)
+{
+    bool found_existing = false;
+
+    for (int i = 0; i < s_saved_networks.count; ++i)
+    {
+        wifi_network_credentials* ap = &s_saved_networks.networks[i];
+
+        if (found_existing)
+        {
+            // Shift left
+            wifi_network_credentials* prev = &s_saved_networks.networks[i - 1];
+            memcpy(prev, ap, sizeof(*prev));
+            memset(ap, 0, sizeof(*ap));
+        }
+        else if (strcmp(ap->ssid, ssid) == 0)
+        {
+            found_existing = true;
+            memset(ap, 0, sizeof(*ap));
+        }
+    }
+
+    if (found_existing)
+    {
+        --s_saved_networks.count;
+        wifi_flush_saved_networks();
+    }
 }

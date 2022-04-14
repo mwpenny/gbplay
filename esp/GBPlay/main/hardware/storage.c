@@ -3,7 +3,7 @@
 
 #include "storage.h"
 
-static nvs_handle storage_handle;
+static nvs_handle s_storage_handle;
 
 void storage_initialize()
 {
@@ -15,32 +15,54 @@ void storage_initialize()
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
-    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &storage_handle));
+    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &s_storage_handle));
 }
 
 void storage_deinitialize()
 {
-    nvs_close(storage_handle);
+    nvs_close(s_storage_handle);
+}
+
+void* storage_get_blob(const char* key)
+{
+    size_t size = 0;
+    if (nvs_get_blob(s_storage_handle, key, NULL, &size) != ESP_OK)
+    {
+        // Does not exist
+        return NULL;
+    }
+
+    void* blob = malloc(size);
+    ESP_ERROR_CHECK(nvs_get_blob(s_storage_handle, key, blob, &size));
+    return blob;
+}
+
+void storage_set_blob(const char* key, const void* value, size_t length)
+{
+    ESP_ERROR_CHECK(nvs_set_blob(s_storage_handle, key, value, length));
+    ESP_ERROR_CHECK(nvs_commit(s_storage_handle));
+
+    ESP_LOGI(__func__, "Wrote blob '%s' to storage", key);
 }
 
 char* storage_get_string(const char* key)
 {
     size_t size = 0;
-    if (nvs_get_str(storage_handle, key, NULL, &size) != ESP_OK)
+    if (nvs_get_str(s_storage_handle, key, NULL, &size) != ESP_OK)
     {
         // Does not exist
         return NULL;
     }
 
     char* str = malloc(size);
-    ESP_ERROR_CHECK(nvs_get_str(storage_handle, key, str, &size));
+    ESP_ERROR_CHECK(nvs_get_str(s_storage_handle, key, str, &size));
     return str;
 }
 
 void storage_set_string(const char* key, const char* value)
 {
-    ESP_ERROR_CHECK(nvs_set_str(storage_handle, key, value));
-    ESP_ERROR_CHECK(nvs_commit(storage_handle));
+    ESP_ERROR_CHECK(nvs_set_str(s_storage_handle, key, value));
+    ESP_ERROR_CHECK(nvs_commit(s_storage_handle));
 
-    ESP_LOGI(__func__, "Wrote %s to storage", key);
+    ESP_LOGI(__func__, "Wrote string '%s' to storage", key);
 }
