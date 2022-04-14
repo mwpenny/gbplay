@@ -24,6 +24,11 @@ static struct {
     struct arg_end* end;
 } load_connection_args;
 
+static struct {
+    struct arg_int* index;
+    struct arg_end* end;
+} forget_connection_args;
+
 static int _wifi_scan(int argc, char** argv)
 {
     uint16_t ap_count = DEFAULT_SCAN_LIST_SIZE;
@@ -58,7 +63,14 @@ static int _wifi_connect(int argc, char **argv)
     {
         if (wifi_connect_args.save->count > 0)
         {
-            wifi_save_network(ssid, pass);
+            if (!wifi_save_network(ssid, pass))
+            {
+                ESP_LOGW(
+                    __func__,
+                    "Could not save network %s. Maximum number are already saved.",
+                    ssid
+                );
+            }
         }
         return 0;
     }
@@ -114,7 +126,18 @@ static int _http_get(int argc, char** argv)
     return (data_read < 0) ? 1 : 0;
 }
 
-int _load_connection(int argc, char** argv)
+static void _list_saved_networks()
+{
+    int saved_network_count = wifi_saved_network_count();
+
+    ESP_LOGI(__func__, "Total saved networks = %d", saved_network_count);
+    for (int i = 0; i < saved_network_count; ++i)
+    {
+        ESP_LOGI(__func__, "%d: %s", i, wifi_get_saved_network_by_index(i)->ssid);
+    }
+}
+
+static int _load_connection(int argc, char** argv)
 {
     int nerrors = arg_parse(argc, argv, (void**)&load_connection_args);
     if (nerrors != 0) {
@@ -124,14 +147,7 @@ int _load_connection(int argc, char** argv)
 
     if (load_connection_args.index->count == 0)
     {
-        int saved_network_count = wifi_saved_network_count();
-
-        ESP_LOGI(__func__, "Total saved networks = %d", saved_network_count);
-        for (int i = 0; i < saved_network_count; ++i)
-        {
-            ESP_LOGI(__func__, "%d: %s", i, wifi_get_saved_network_by_index(i)->ssid);
-        }
-
+        _list_saved_networks();
         return 0;
     }
     else
@@ -146,6 +162,35 @@ int _load_connection(int argc, char** argv)
         }
 
         return wifi_connect(ap->ssid, ap->pass) ? 0 : 1;
+    }
+}
+
+static int _forget_connection(int argc, char** argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**)&forget_connection_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, forget_connection_args.end, argv[0]);
+        return 1;
+    }
+
+    if (forget_connection_args.index->count == 0)
+    {
+        _list_saved_networks();
+        return 0;
+    }
+    else
+    {
+        int index = forget_connection_args.index->ival[0];
+        wifi_network_credentials* ap = wifi_get_saved_network_by_index(index);
+
+        if (ap == NULL)
+        {
+            ESP_LOGE(__func__, "No saved network with index %d", index);
+            return 1;
+        }
+
+        wifi_forget_network(ap->ssid);
+        return 0;
     }
 }
 
@@ -221,7 +266,11 @@ static void _register_http_get()
 
 void _register_load_connection()
 {
-    load_connection_args.index = arg_int0(NULL, NULL, "[index]", "Index of saved network. Omit to list all saved networks.");
+    load_connection_args.index = arg_int0(
+        NULL,
+        NULL,
+        "[index]", "Index of saved network. Omit to list all saved networks."
+    );
     load_connection_args.end = arg_end(10 /* max error count */);
 
     const esp_console_cmd_t load_def = {
@@ -235,6 +284,26 @@ void _register_load_connection()
     ESP_ERROR_CHECK(esp_console_cmd_register(&load_def));
 }
 
+void _register_forget_connection()
+{
+    forget_connection_args.index = arg_int0(
+        NULL,
+        NULL,
+        "[index]", "Index of saved network. Omit to list all saved networks."
+    );
+    forget_connection_args.end = arg_end(10 /* max error count */);
+
+    const esp_console_cmd_t forget_def = {
+        .command = "forget",
+        .help = "Forget saved network configuration",
+        .hint = NULL,
+        .func = &_forget_connection,
+        .argtable = &forget_connection_args
+    };
+
+    ESP_ERROR_CHECK(esp_console_cmd_register(&forget_def));
+}
+
 void cmds_register()
 {
     _register_wifi_scan();
@@ -245,6 +314,7 @@ void cmds_register()
     _register_http_get();
 
     _register_load_connection();
+    _register_forget_connection();
 
     esp_console_register_help_command();
 }
