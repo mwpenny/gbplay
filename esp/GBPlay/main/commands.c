@@ -3,12 +3,9 @@
 #include <esp_log.h>
 
 #include "http.h"
-#include "hardware/storage.h"
 #include "hardware/wifi.h"
 
 #define DEFAULT_SCAN_LIST_SIZE 10
-#define SSID_STORAGE_KEY "wifi_ssid"
-#define PASS_STORAGE_KEY "wifi_pass"
 
 static struct {
     struct arg_lit* save;
@@ -21,6 +18,11 @@ static struct {
     struct arg_str* url;
     struct arg_end* end;
 } http_get_args;
+
+static struct {
+    struct arg_int* index;
+    struct arg_end* end;
+} load_connection_args;
 
 static int _wifi_scan(int argc, char** argv)
 {
@@ -52,13 +54,16 @@ static int _wifi_connect(int argc, char **argv)
     const char* ssid = wifi_connect_args.ssid->sval[0];
     const char* pass = wifi_connect_args.pass->sval[0];
 
-    if (wifi_connect_args.save->count > 0)
+    if (wifi_connect(ssid, pass))
     {
-        storage_set_string(SSID_STORAGE_KEY, ssid);
-        storage_set_string(PASS_STORAGE_KEY, pass);
+        if (wifi_connect_args.save->count > 0)
+        {
+            wifi_save_network(ssid, pass);
+        }
+        return 0;
     }
 
-    return wifi_connect(ssid, pass) ? 0 : 1;
+    return 1;
 }
 
 static int _wifi_disconnect(int argc, char** argv)
@@ -111,23 +116,37 @@ static int _http_get(int argc, char** argv)
 
 int _load_connection(int argc, char** argv)
 {
-    int ret = 1;
-    char* ssid = storage_get_string(SSID_STORAGE_KEY);
-    char* pass = storage_get_string(PASS_STORAGE_KEY);
+    int nerrors = arg_parse(argc, argv, (void**)&load_connection_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, load_connection_args.end, argv[0]);
+        return 1;
+    }
 
-    if (ssid == NULL || pass == NULL)
+    if (load_connection_args.index->count == 0)
     {
-        ESP_LOGI(__func__, "No saved credentials");
+        int saved_network_count = wifi_saved_network_count();
+
+        ESP_LOGI(__func__, "Total saved networks = %d", saved_network_count);
+        for (int i = 0; i < saved_network_count; ++i)
+        {
+            ESP_LOGI(__func__, "%d: %s", i, wifi_get_saved_network_by_index(i)->ssid);
+        }
+
+        return 0;
     }
     else
     {
-        ret = wifi_connect(ssid, pass) ? 0 : 1;
+        int index = load_connection_args.index->ival[0];
+        wifi_network_credentials* ap = wifi_get_saved_network_by_index(index);
+
+        if (ap == NULL)
+        {
+            ESP_LOGE(__func__, "No saved network with index %d", index);
+            return 1;
+        }
+
+        return wifi_connect(ap->ssid, ap->pass) ? 0 : 1;
     }
-
-    free(ssid);
-    free(pass);
-
-    return ret;
 }
 
 
@@ -202,11 +221,15 @@ static void _register_http_get()
 
 void _register_load_connection()
 {
+    load_connection_args.index = arg_int0(NULL, NULL, "[index]", "Index of saved network. Omit to list all saved networks.");
+    load_connection_args.end = arg_end(10 /* max error count */);
+
     const esp_console_cmd_t load_def = {
         .command = "load",
         .help = "Load saved network configuration",
         .hint = NULL,
-        .func = &_load_connection
+        .func = &_load_connection,
+        .argtable = &load_connection_args
     };
 
     ESP_ERROR_CHECK(esp_console_cmd_register(&load_def));
