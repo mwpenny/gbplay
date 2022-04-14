@@ -56,7 +56,10 @@ static int _wifi_connect(int argc, char **argv)
 
     if (wifi_connect(ssid, pass))
     {
-        wifi_save_network(ssid, pass);
+        if (wifi_connect_args.save->count > 0)
+        {
+            wifi_save_network(ssid, pass);
+        }
         return 0;
     }
 
