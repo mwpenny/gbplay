@@ -250,7 +250,7 @@ bool wifi_is_connected()
     return is_connected;
 }
 
-static void wifi_flush_saved_networks()
+static void _wifi_flush_saved_networks()
 {
     storage_set_blob(
         WIFI_SAVED_NETWORKS_STORAGE_KEY,
@@ -296,7 +296,7 @@ bool wifi_save_network(const char* ssid, const char* password)
         strncpy(existing->pass, password, WIFI_MAX_PASS_LENGTH);
         existing->pass[WIFI_MAX_PASS_LENGTH] = '\0';
 
-        wifi_flush_saved_networks();
+        _wifi_flush_saved_networks();
 
         return true;
     }
@@ -311,7 +311,7 @@ bool wifi_save_network(const char* ssid, const char* password)
         ap->pass[WIFI_MAX_PASS_LENGTH] = '\0';
 
         ++s_saved_networks.count;
-        wifi_flush_saved_networks();
+        _wifi_flush_saved_networks();
 
         return true;
     }
@@ -345,6 +345,6 @@ void wifi_forget_network(const char* ssid)
     if (found_existing)
     {
         --s_saved_networks.count;
-        wifi_flush_saved_networks();
+        _wifi_flush_saved_networks();
     }
 }
