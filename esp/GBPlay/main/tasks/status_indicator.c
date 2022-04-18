@@ -27,7 +27,7 @@ void task_status_indicator_start()
     xTaskCreatePinnedToCore(
         &task_status_indicator,
         TASK_NAME,
-        configMINIMAL_STACK_SIZE,  // Stack size (in words)
+        configMINIMAL_STACK_SIZE,  // Stack size
         NULL,                      // Arguments
         0,                         // Priority
         NULL,                      // Task handle (output parameter)

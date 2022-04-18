@@ -59,7 +59,7 @@ static int _wifi_connect(int argc, char **argv)
     const char* ssid = wifi_connect_args.ssid->sval[0];
     const char* pass = wifi_connect_args.pass->sval[0];
 
-    if (wifi_connect(ssid, pass))
+    if (wifi_connect(ssid, pass, true /* force */))
     {
         if (wifi_connect_args.save->count > 0)
         {
@@ -126,14 +126,12 @@ static int _http_get(int argc, char** argv)
     return (data_read < 0) ? 1 : 0;
 }
 
-static void _list_saved_networks()
+static void _list_saved_networks(wifi_network_credentials* saved_networks, int count)
 {
-    int saved_network_count = wifi_saved_network_count();
-
-    ESP_LOGI(__func__, "Total saved networks = %d", saved_network_count);
-    for (int i = 0; i < saved_network_count; ++i)
+    ESP_LOGI(__func__, "Total saved networks = %d", count);
+    for (int i = 0; i < count; ++i)
     {
-        ESP_LOGI(__func__, "%d: %s", i, wifi_get_saved_network_by_index(i)->ssid);
+        ESP_LOGI(__func__, "%d: %s", i, saved_networks[i].ssid);
     }
 }
 
@@ -145,23 +143,25 @@ static int _load_connection(int argc, char** argv)
         return 1;
     }
 
+    wifi_network_credentials saved_networks[WIFI_MAX_SAVED_NETWORKS] = {0};
+    int saved_network_count = wifi_get_all_saved_networks(saved_networks);
+
     if (load_connection_args.index->count == 0)
     {
-        _list_saved_networks();
+        _list_saved_networks(saved_networks, saved_network_count);
         return 0;
     }
     else
     {
         int index = load_connection_args.index->ival[0];
-        wifi_network_credentials* ap = wifi_get_saved_network_by_index(index);
-
-        if (ap == NULL)
+        if (index < 0 || index >= saved_network_count)
         {
             ESP_LOGE(__func__, "No saved network with index %d", index);
             return 1;
         }
 
-        return wifi_connect(ap->ssid, ap->pass) ? 0 : 1;
+        wifi_network_credentials* ap = &saved_networks[index];
+        return wifi_connect(ap->ssid, ap->pass, true /* force */) ? 0 : 1;
     }
 }
 
@@ -173,23 +173,24 @@ static int _forget_connection(int argc, char** argv)
         return 1;
     }
 
+    wifi_network_credentials saved_networks[WIFI_MAX_SAVED_NETWORKS] = {0};
+    int saved_network_count = wifi_get_all_saved_networks(saved_networks);
+
     if (forget_connection_args.index->count == 0)
     {
-        _list_saved_networks();
+        _list_saved_networks(saved_networks, saved_network_count);
         return 0;
     }
     else
     {
         int index = forget_connection_args.index->ival[0];
-        wifi_network_credentials* ap = wifi_get_saved_network_by_index(index);
-
-        if (ap == NULL)
+        if (index < 0 || index >= saved_network_count)
         {
             ESP_LOGE(__func__, "No saved network with index %d", index);
             return 1;
         }
 
-        wifi_forget_network(ap->ssid);
+        wifi_forget_network(saved_networks[index].ssid);
         return 0;
     }
 }
@@ -210,8 +211,8 @@ static void _register_wifi_scan()
 static void _register_wifi_connect()
 {
     wifi_connect_args.save = arg_lit0("s", "save", "Whether to save the configuration");
-    wifi_connect_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of Wi-Fi network");
-    wifi_connect_args.pass = arg_str1(NULL, NULL, "<password>", "Password of Wi-Fi network");
+    wifi_connect_args.ssid = arg_str1(NULL, NULL, "ssid", "SSID of Wi-Fi network");
+    wifi_connect_args.pass = arg_str1(NULL, NULL, "password", "Password of Wi-Fi network");
     wifi_connect_args.end = arg_end(10 /* max error count */);
 
     const esp_console_cmd_t connect_def = {
@@ -250,7 +251,7 @@ static void _register_wifi_status()
 
 static void _register_http_get()
 {
-    http_get_args.url = arg_str1(NULL, NULL, "<url>", "URL of web page to GET");
+    http_get_args.url = arg_str1(NULL, NULL, "url", "URL of web page to GET");
     http_get_args.end = arg_end(10 /* max error count */);
 
     const esp_console_cmd_t get_def = {
@@ -269,7 +270,7 @@ void _register_load_connection()
     load_connection_args.index = arg_int0(
         NULL,
         NULL,
-        "[index]", "Index of saved network. Omit to list all saved networks."
+        "index", "Index of saved network. Omit to list all saved networks."
     );
     load_connection_args.end = arg_end(10 /* max error count */);
 
@@ -289,7 +290,7 @@ void _register_forget_connection()
     forget_connection_args.index = arg_int0(
         NULL,
         NULL,
-        "[index]", "Index of saved network. Omit to list all saved networks."
+        "index", "Index of saved network. Omit to list all saved networks."
     );
     forget_connection_args.end = arg_end(10 /* max error count */);
 

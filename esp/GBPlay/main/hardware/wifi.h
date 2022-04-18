@@ -30,13 +30,12 @@ void wifi_initialize();
 void wifi_deinitialize();
 
 void wifi_scan(wifi_ap_info* ap_list, uint16_t* ap_count);
-bool wifi_connect(const char* ssid, const char* password);
+bool wifi_connect(const char* ssid, const char* password, bool force);
 void wifi_disconnect();
 bool wifi_is_connected();
 
-int wifi_saved_network_count();
-wifi_network_credentials* wifi_get_saved_network(const char* ssid);
-wifi_network_credentials* wifi_get_saved_network_by_index(int index);
+bool wifi_get_saved_network(const char* ssid, wifi_network_credentials* out_network);
+int wifi_get_all_saved_networks(wifi_network_credentials* out_networks);
 bool wifi_save_network(const char* ssid, const char* password);
 void wifi_forget_network(const char* ssid);
 
