@@ -110,7 +110,7 @@ class BGBLinkCableServer:
                 self._send_packet(
                     105,       # Slave data packet
                     response,  # Data value
-                    0x81       # Control value
+                    0x80       # Control value
                 )
         else:
             # Indicates no response from the GB
