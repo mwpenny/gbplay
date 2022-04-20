@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <string.h>
 
 #include <esp_log.h>
@@ -8,109 +9,60 @@
 #include "wifi.h"
 
 #define MAX_CONNECTION_RETRY_COUNT 3
+#define CONNECTION_TIMEOUT_MS      15000
 
 #define WIFI_SAVED_NETWORKS_STORAGE_KEY "wifi_networks"
 
 typedef enum {
     CONNECTION_FAIL    = 1,
     CONNECTION_SUCCESS = 2
-} WifiConnectionStatus;
+} WifiConnectionEvent;
 
 typedef struct {
     wifi_network_credentials networks[WIFI_MAX_SAVED_NETWORKS];
     int count;
 } wifi_saved_network_info;
 
+static SemaphoreHandle_t s_wifi_lock;
+static SemaphoreHandle_t s_wifi_storage_lock;
+static EventGroupHandle_t s_wifi_event_group;  // For blocking on connect
 static wifi_saved_network_info s_saved_networks = {0};
-
-static volatile bool is_connected = false;
-
-static esp_netif_t* default_iface = NULL;
-
-// FreeRTOS event group to signal when we are connected
-static EventGroupHandle_t wifi_event_group;
-static int connection_retry_count = 0;
+static esp_netif_t* s_wifi_iface = NULL;
+static volatile bool s_is_connected = false;
 
 static void _set_connection_status(bool connected)
 {
-    is_connected = connected;
+    s_is_connected = connected;
 }
 
-static void _on_wifi_event(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+static void _on_disconnect(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    switch (event_id)
-    {
-        case WIFI_EVENT_STA_START:
-            ESP_LOGI(__func__, "Wi-Fi started");
-            break;
-        case WIFI_EVENT_STA_CONNECTED:
-            ESP_LOGI(__func__, "Wi-Fi connected");
-            break;
-        case WIFI_EVENT_STA_DISCONNECTED:
-        {
-            wifi_event_sta_disconnected_t* event = (wifi_event_sta_disconnected_t*)event_data;
+    wifi_event_sta_disconnected_t* event = (wifi_event_sta_disconnected_t*)event_data;
+    ESP_LOGI(__func__, "Disconnected from network %s", event->ssid);
 
-            _set_connection_status(false);
-
-            if (event->reason == WIFI_REASON_ASSOC_LEAVE)
-            {
-                // Left voluntarily
-                ESP_LOGI(__func__, "Left Wi-Fi network %s", event->ssid);
-            }
-            else if (connection_retry_count <= MAX_CONNECTION_RETRY_COUNT)
-            {
-                // Failed to connect, or AP went away
-                ESP_LOGI(__func__, "Wi-Fi disconnected. Retrying connection to %s", event->ssid);
-                ++connection_retry_count;
-                esp_wifi_connect();
-            }
-            else
-            {
-                // Failed after retrying
-                ESP_LOGI(__func__, "Failed to connect to Wi-Fi network %s", event->ssid);
-                connection_retry_count = 0;
-                xEventGroupSetBits(wifi_event_group, CONNECTION_FAIL);
-            }
-            break;
-        }
-        default:
-            break;
-    }
+    _set_connection_status(false);
+    xEventGroupSetBits(s_wifi_event_group, CONNECTION_FAIL);
 }
 
-static void _on_ip_event(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+static void _on_connect(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    switch (event_id)
-    {
-        case IP_EVENT_STA_GOT_IP:
-        {
-            // Got IP, or it changed. Reconnect.
-            ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+    ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
 
-            if (event->ip_changed)
-            {
-                // TODO: reconnect?
-            }
+    char address[16] = {0};
+    esp_ip4addr_ntoa(&event->ip_info.ip, address, sizeof(address));
+    ESP_LOGI(__func__, "Got IP: %s", address);
 
-            char address[16] = {0};
-            esp_ip4addr_ntoa(&event->ip_info.ip, address, sizeof(address));
-            ESP_LOGI(__func__, "Got IP: %s", address);
-
-            _set_connection_status(true);
-            connection_retry_count = 0;
-            xEventGroupSetBits(wifi_event_group, CONNECTION_SUCCESS);
-            break;
-        }
-        case IP_EVENT_STA_LOST_IP:
-            // TODO: reconnect?
-            break;
-        default:
-            break;
-    }
+    _set_connection_status(true);
+    xEventGroupSetBits(s_wifi_event_group, CONNECTION_SUCCESS);
 }
 
 void wifi_initialize()
 {
+    s_wifi_lock = xSemaphoreCreateRecursiveMutex();
+    s_wifi_storage_lock = xSemaphoreCreateMutex();
+
+    s_wifi_event_group = xEventGroupCreate();
+
     // Load previously saved credentials
     void* saved_networks = storage_get_blob(WIFI_SAVED_NETWORKS_STORAGE_KEY);
     if (saved_networks)
@@ -119,13 +71,11 @@ void wifi_initialize()
         free(saved_networks);
     }
 
-    wifi_event_group = xEventGroupCreate();
-
     _set_connection_status(false);
 
     // Init TCP/IP stack
     ESP_ERROR_CHECK(esp_netif_init());
-    default_iface = esp_netif_create_default_wifi_sta();
+    s_wifi_iface = esp_netif_create_default_wifi_sta();
 
     // Station mode
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -134,10 +84,10 @@ void wifi_initialize()
 
     // Event handlers
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT, ESP_EVENT_ANY_ID, &_on_wifi_event, NULL, NULL
+        WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &_on_disconnect, NULL, NULL
     ));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        IP_EVENT, ESP_EVENT_ANY_ID, &_on_ip_event, NULL, NULL
+        IP_EVENT, IP_EVENT_STA_GOT_IP, &_on_connect, NULL, NULL
     ));
 
     ESP_ERROR_CHECK(esp_wifi_start());
@@ -150,18 +100,24 @@ void wifi_deinitialize()
     ESP_ERROR_CHECK(esp_wifi_stop());
     ESP_ERROR_CHECK(esp_wifi_deinit());
 
-    esp_netif_destroy_default_wifi(default_iface);
+    esp_netif_destroy_default_wifi(s_wifi_iface);
     ESP_ERROR_CHECK(esp_netif_deinit());
 
-    vEventGroupDelete(wifi_event_group);
+    vEventGroupDelete(s_wifi_event_group);
+
+    vSemaphoreDelete(s_wifi_storage_lock);
+    vSemaphoreDelete(s_wifi_lock);
 }
 
 void wifi_scan(wifi_ap_info* ap_list, uint16_t* ap_count)
 {
+    assert(xSemaphoreTakeRecursive(s_wifi_lock, portMAX_DELAY) == pdTRUE);
+
     if (esp_wifi_scan_start(NULL, true) != ESP_OK)
     {
         // Could fail due to timeout or wifi still connecting
         *ap_count = 0;
+        xSemaphoreGive(s_wifi_lock);
         return;
     }
 
@@ -193,12 +149,12 @@ void wifi_scan(wifi_ap_info* ap_list, uint16_t* ap_count)
 
     free(temp_ap_list);
     *ap_count = total_aps_returned;
+
+    xSemaphoreGive(s_wifi_lock);
 }
 
-bool wifi_connect(const char* ssid, const char* password)
+bool wifi_connect(const char* ssid, const char* password, bool force)
 {
-    wifi_disconnect();
-
     wifi_config_t cfg = { 0 };
 
     int max_ssid_len = sizeof(cfg.sta.ssid);
@@ -218,37 +174,72 @@ bool wifi_connect(const char* ssid, const char* password)
         return false;
     }
 
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &cfg));
-
-    if (esp_wifi_connect() != ESP_OK)
     {
-        return false;
-    }
+        assert(xSemaphoreTakeRecursive(s_wifi_lock, portMAX_DELAY) == pdTRUE);
 
-    // Wait for connection or timeout
-    return xEventGroupWaitBits(
-        wifi_event_group,
-        CONNECTION_FAIL | CONNECTION_SUCCESS,
-        pdTRUE,  // xClearOnExit
-        pdFALSE, // xWaitForAllBits
-        portMAX_DELAY
-    ) & CONNECTION_SUCCESS;
+        bool did_connect = false;
+
+        if (!force && wifi_is_connected())
+        {
+            // Connected to something else. Give up.
+            // When the user chooses to connect, force = true.
+            // When the connection manager tries to connect, force = false.
+            goto end;
+        }
+
+        wifi_disconnect();
+
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &cfg));
+
+        for (int i = 0; !did_connect && i < MAX_CONNECTION_RETRY_COUNT; ++i)
+        {
+            ESP_LOGI(
+                __func__,
+                "Trying to connect to network '%s' (attempt %d of %d)...",
+                ssid, i + 1, MAX_CONNECTION_RETRY_COUNT
+            );
+
+            xEventGroupClearBits(s_wifi_event_group, 0xFF);
+
+            if (esp_wifi_connect() != ESP_OK)
+            {
+                goto end;
+            }
+
+            did_connect = (xEventGroupWaitBits(
+                s_wifi_event_group,
+                CONNECTION_FAIL | CONNECTION_SUCCESS,
+                pdFALSE,  // xClearOnExit
+                pdFALSE, // xWaitForAllBits
+                CONNECTION_TIMEOUT_MS / portTICK_RATE_MS
+            ) & CONNECTION_SUCCESS) == CONNECTION_SUCCESS;
+        }
+
+end:
+        xSemaphoreGive(s_wifi_lock);
+        return did_connect;
+    }
 }
 
 void wifi_disconnect()
 {
+    assert(xSemaphoreTakeRecursive(s_wifi_lock, portMAX_DELAY) == pdTRUE);
+
     if (wifi_is_connected())
     {
         esp_wifi_disconnect();
     }
+
+    xSemaphoreGive(s_wifi_lock);
 }
 
 bool wifi_is_connected()
 {
     //wifi_ap_record_t ap_info = { 0 };
     //return esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK;
-    return is_connected;
+    return s_is_connected;
 }
+
 
 static void _wifi_flush_saved_networks()
 {
@@ -259,12 +250,7 @@ static void _wifi_flush_saved_networks()
     );
 }
 
-int wifi_saved_network_count()
-{
-    return s_saved_networks.count;
-}
-
-wifi_network_credentials* wifi_get_saved_network(const char* ssid)
+static wifi_network_credentials* _get_saved_network(const char* ssid)
 {
     for (int i = 0; i < s_saved_networks.count; ++i)
     {
@@ -278,50 +264,93 @@ wifi_network_credentials* wifi_get_saved_network(const char* ssid)
     return NULL;
 }
 
-wifi_network_credentials* wifi_get_saved_network_by_index(int index)
+bool wifi_get_saved_network(const char* ssid, wifi_network_credentials* out_network)
 {
-    if (index < 0 || index >= s_saved_networks.count)
+    bool found = false;
+
     {
-        return NULL;
+        assert(xSemaphoreTake(s_wifi_storage_lock, portMAX_DELAY) == pdTRUE);
+
+        wifi_network_credentials* existing = _get_saved_network(ssid);
+        if (existing != NULL)
+        {
+            *out_network = *existing;
+            found = true;
+        }
+
+        xSemaphoreGive(s_wifi_storage_lock);
     }
 
-    return &s_saved_networks.networks[index];
+    return found;
+}
+
+int wifi_get_all_saved_networks(wifi_network_credentials* out_networks)
+{
+    int count = 0;
+
+    {
+        assert(xSemaphoreTake(s_wifi_storage_lock, portMAX_DELAY) == pdTRUE);
+
+        count = s_saved_networks.count;
+
+        for (int i = 0; i < count; ++i)
+        {
+            out_networks[i] = s_saved_networks.networks[i];
+        }
+
+        xSemaphoreGive(s_wifi_storage_lock);
+    }
+
+    return count;
 }
 
 bool wifi_save_network(const char* ssid, const char* password)
 {
-    wifi_network_credentials* existing = wifi_get_saved_network(ssid);
-    if (existing)
+    bool saved = false;
+
     {
-        strncpy(existing->pass, password, WIFI_MAX_PASS_LENGTH);
-        existing->pass[WIFI_MAX_PASS_LENGTH] = '\0';
+        assert(xSemaphoreTake(s_wifi_storage_lock, portMAX_DELAY) == pdTRUE);
 
-        _wifi_flush_saved_networks();
+        wifi_network_credentials* existing = _get_saved_network(ssid);
+        if (existing)
+        {
+            strncpy(existing->pass, password, WIFI_MAX_PASS_LENGTH);
+            existing->pass[WIFI_MAX_PASS_LENGTH] = '\0';
 
-        return true;
+            _wifi_flush_saved_networks();
+
+            saved = false;
+        }
+        else if (s_saved_networks.count < WIFI_MAX_SAVED_NETWORKS)
+        {
+            wifi_network_credentials* ap = &s_saved_networks.networks[s_saved_networks.count];
+
+            strncpy(ap->ssid, ssid, WIFI_MAX_SSID_LENGTH);
+            ap->ssid[WIFI_MAX_SSID_LENGTH] = '\0';
+
+            strncpy(ap->pass, password, WIFI_MAX_PASS_LENGTH);
+            ap->pass[WIFI_MAX_PASS_LENGTH] = '\0';
+
+            ++s_saved_networks.count;
+            _wifi_flush_saved_networks();
+
+            saved = true;
+        }
+        else
+        {
+            // No room. Should have checked and cleared a spot first.
+        }
+
+        xSemaphoreGive(s_wifi_storage_lock);
     }
-    else if (s_saved_networks.count < WIFI_MAX_SAVED_NETWORKS)
-    {
-        wifi_network_credentials* ap = &s_saved_networks.networks[s_saved_networks.count];
 
-        strncpy(ap->ssid, ssid, WIFI_MAX_SSID_LENGTH);
-        ap->ssid[WIFI_MAX_SSID_LENGTH] = '\0';
-
-        strncpy(ap->pass, password, WIFI_MAX_PASS_LENGTH);
-        ap->pass[WIFI_MAX_PASS_LENGTH] = '\0';
-
-        ++s_saved_networks.count;
-        _wifi_flush_saved_networks();
-
-        return true;
-    }
-
-    // No room. Should have checked and cleared a spot first.
-    return false;
+    return saved;
 }
 
 void wifi_forget_network(const char* ssid)
 {
+    assert(xSemaphoreTake(s_wifi_storage_lock, portMAX_DELAY) == pdTRUE);
+
     bool found_existing = false;
 
     for (int i = 0; i < s_saved_networks.count; ++i)
@@ -347,4 +376,6 @@ void wifi_forget_network(const char* ssid)
         --s_saved_networks.count;
         _wifi_flush_saved_networks();
     }
+
+    xSemaphoreGive(s_wifi_storage_lock);
 }
