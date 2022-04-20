@@ -58,7 +58,7 @@ static void _on_connect(void* arg, esp_event_base_t event_base, int32_t event_id
 
 void wifi_initialize()
 {
-    s_wifi_lock = xSemaphoreCreateRecursiveMutex();
+    s_wifi_lock = xSemaphoreCreateMutex();
     s_wifi_storage_lock = xSemaphoreCreateMutex();
 
     s_wifi_event_group = xEventGroupCreate();
@@ -111,7 +111,7 @@ void wifi_deinitialize()
 
 void wifi_scan(wifi_ap_info* ap_list, uint16_t* ap_count)
 {
-    assert(xSemaphoreTakeRecursive(s_wifi_lock, portMAX_DELAY) == pdTRUE);
+    assert(xSemaphoreTake(s_wifi_lock, portMAX_DELAY) == pdTRUE);
 
     if (esp_wifi_scan_start(NULL, true) != ESP_OK)
     {
@@ -153,6 +153,25 @@ void wifi_scan(wifi_ap_info* ap_list, uint16_t* ap_count)
     xSemaphoreGive(s_wifi_lock);
 }
 
+static void _disconnect()
+{
+    xEventGroupClearBits(s_wifi_event_group, 0xFF);
+
+    if (wifi_is_connected())
+    {
+        esp_wifi_disconnect();
+
+        // Wait for disconnect
+        xEventGroupWaitBits(
+            s_wifi_event_group,
+            CONNECTION_FAIL,
+            pdTRUE,  // xClearOnExit
+            pdFALSE, // xWaitForAllBits
+            portMAX_DELAY
+        );
+    }
+}
+
 bool wifi_connect(const char* ssid, const char* password, bool force)
 {
     wifi_config_t cfg = { 0 };
@@ -175,7 +194,7 @@ bool wifi_connect(const char* ssid, const char* password, bool force)
     }
 
     {
-        assert(xSemaphoreTakeRecursive(s_wifi_lock, portMAX_DELAY) == pdTRUE);
+        assert(xSemaphoreTake(s_wifi_lock, portMAX_DELAY) == pdTRUE);
 
         bool did_connect = false;
 
@@ -187,12 +206,12 @@ bool wifi_connect(const char* ssid, const char* password, bool force)
             goto end;
         }
 
-        wifi_disconnect();
-
         ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &cfg));
 
         for (int i = 0; !did_connect && i < MAX_CONNECTION_RETRY_COUNT; ++i)
         {
+            _disconnect();
+
             ESP_LOGI(
                 __func__,
                 "Trying to connect to network '%s' (attempt %d of %d)...",
@@ -223,12 +242,9 @@ end:
 
 void wifi_disconnect()
 {
-    assert(xSemaphoreTakeRecursive(s_wifi_lock, portMAX_DELAY) == pdTRUE);
+    assert(xSemaphoreTake(s_wifi_lock, portMAX_DELAY) == pdTRUE);
 
-    if (wifi_is_connected())
-    {
-        esp_wifi_disconnect();
-    }
+    _disconnect();
 
     xSemaphoreGive(s_wifi_lock);
 }
