@@ -10,6 +10,7 @@
 #include "hardware/wifi.h"
 
 #include "tasks/status_indicator.h"
+#include "tasks/socket_manager.h"
 
 #define CONFIG_CONSOLE_MAX_COMMAND_LINE_LENGTH 1024
 
@@ -34,6 +35,7 @@ void init_console()
 void start_tasks()
 {
     task_status_indicator_start();
+    task_socket_manager_start();
 }
 
 void app_main()

@@ -1,9 +1,11 @@
 #include <argtable3/argtable3.h>
 #include <esp_console.h>
 #include <esp_log.h>
+#include <unistd.h>
 
 #include "http.h"
 #include "hardware/wifi.h"
+#include "tasks/socket_manager.h"
 
 #define DEFAULT_SCAN_LIST_SIZE 10
 
@@ -23,6 +25,15 @@ static struct {
     struct arg_int* index;
     struct arg_end* end;
 } load_connection_args;
+
+static struct {
+    struct arg_str* message;
+    struct arg_end* end;
+} socket_send_args;
+
+static struct {
+    struct arg_end* end;
+} socket_read_args;
 
 static int _wifi_scan(int argc, char** argv)
 {
@@ -149,6 +160,63 @@ int _load_connection(int argc, char** argv)
     }
 }
 
+int _send_socket(int argc, char** argv){
+    if (!wifi_is_connected())
+    {
+        ESP_LOGE(__func__, "Please first establish a connection");
+        return 1;
+    }
+
+    if (sock < 0){
+        ESP_LOGE(__func__, "Socket is not initialized");
+        return 1;
+    }
+
+    int nerrors = arg_parse(argc, argv, (void**)&socket_send_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, socket_send_args.end, argv[0]);
+        return 1;
+    }
+
+    const char* message = socket_send_args.message->sval[0];
+    bool sent = socket_send_data(message);
+
+    if (!sent){
+        ESP_LOGE(__func__, "Message send failed");
+        return 1;
+    }
+    ESP_LOGI(__func__, "Message sent successfully!");
+
+    return 0;
+}
+
+int _read_socket_buffer(int argc, char** argv){
+    if (!wifi_is_connected())
+    {
+        ESP_LOGE(__func__, "Please first establish a connection");
+        return 1;
+    }
+
+    if (sock < 0){
+        ESP_LOGE(__func__, "Socket is not initialized");
+        return 1;
+    }
+
+    if (socket_data == false){
+        ESP_LOGI(__func__, "No data from server");
+        return 0;
+    }
+
+    int nerrors = arg_parse(argc, argv, (void**)&socket_read_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, socket_read_args.end, argv[0]);
+        return 1;
+    }
+
+    ESP_LOGI(__func__, "%s", rx_buffer);
+    socket_data = false;
+    return 0;
+}
 
 static void _register_wifi_scan()
 {
@@ -235,16 +303,47 @@ void _register_load_connection()
     ESP_ERROR_CHECK(esp_console_cmd_register(&load_def));
 }
 
+void _register_send_socket()
+{
+    socket_send_args.message = arg_str1(NULL, NULL, "<message>", "Message to send over socket");
+    socket_send_args.end = arg_end(10 /* max error count */);
+
+    const esp_console_cmd_t send_def = {
+        .command = "send",
+        .help = "Send a message over the opened socket",
+        .hint = NULL,
+        .func = &_send_socket,
+        .argtable = &socket_send_args
+    };
+
+    ESP_ERROR_CHECK(esp_console_cmd_register(&send_def));
+}
+
+void _register_read_socket()
+{
+    socket_read_args.end = arg_end(10 /* max error count */);
+
+    const esp_console_cmd_t read_def = {
+        .command = "read",
+        .help = "Read from the socket buffer",
+        .hint = NULL,
+        .func = &_read_socket_buffer,
+        .argtable = &socket_read_args
+    };
+
+    ESP_ERROR_CHECK(esp_console_cmd_register(&read_def));
+}
+
 void cmds_register()
 {
     _register_wifi_scan();
     _register_wifi_connect();
     _register_wifi_disconnect();
     _register_wifi_status();
-
     _register_http_get();
-
     _register_load_connection();
+    _register_send_socket();
+    _register_read_socket();
 
     esp_console_register_help_command();
 }
