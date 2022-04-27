@@ -2,8 +2,8 @@ from io import DEFAULT_BUFFER_SIZE
 import serial
 
 # Enables link cable communication with a Game Boy over serial. Requires a
-# serial <-> Game Boy adapter which will wait for a byte to be written by
-# the host (PC), send it to the GB, and send byte receievd from the GB back.
+# serial <-> Game Boy adapter which will wait for a byte to be written by the
+# host (PC), send it to the GB, and send the byte receieved from the GB back.
 #
 # An Arduino-based implementation of such an adapter can be found at
 # gbplay/arduino/gb_to_serial.
