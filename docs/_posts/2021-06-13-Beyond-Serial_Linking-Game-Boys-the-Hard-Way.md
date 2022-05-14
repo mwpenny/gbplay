@@ -120,7 +120,7 @@ see. In fact, the capability was used when debugging the new script.
 
 Doing things this way works well and there's minimal overhead. For comparison,
 with a direct connection between Game Boys it takes about 4 seconds to transfer
-[Pokemon trainer data]({{ link_emulation_post }}#trainer-data-exchange) (420
+[Pokemon trainer data]({{ link_emulation_post }}#trainer-data-exchange) (424
 bytes). When sending the same data using 2 USB link cable adapters and a PC it
 took 6 seconds. Not too shabby. The code for the serial bridge script is
 available
@@ -206,7 +206,7 @@ the Pokemon trainer data transfer took 77 seconds -- just under 13x slower than
 the single-PC link. This is about how long it took for the
 [mock trader]({{ link_emulation_post }}#mock-pokemon-trader) script to run with
 real hardware before the USB adapter's send delay was reduced from 100 ms to 5
-ms. The data size is known (420 bytes), and so the speed can be calculated:
+ms. The data size is known (424 bytes), and so the speed can be calculated:
 about 5.5 bytes per second. While a little disappointing, there's a silver
 lining: my mobile data connection is likely a _worst-case_ scenario, and with
 that in mind this was a good stress test. The connection was unstable and had

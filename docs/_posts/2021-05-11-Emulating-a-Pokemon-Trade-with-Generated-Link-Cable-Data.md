@@ -166,7 +166,7 @@ simplicity, the game uses the same code regardless of link cable connection
 type. Since we're doing a trade, these bytes are irrelevant and don't need to
 be understood further.
 
-After the random bytes, Pokemon trainer data is exchanged. The 420-byte data
+After the random bytes, Pokemon trainer data is exchanged. The 424-byte data
 structure contains the name of the trainer, as well as detailed information for
 every Pokemon in their party (level, moves, stats, etc.). The party Pokemon
 portion is helpfully
