@@ -10,6 +10,14 @@ description: >-
   internet using original hardware. It is currently in an early/exploratory
   stage. Stay tuned for more updates as the project progresses.
 
+collections:
+  game-protocols:
+    output: true
+
+relative_links:
+  enabled: true
+  collections: true
+
 # Social links
 rss: RSS Feed
 
@@ -18,3 +26,4 @@ theme: minima
 plugins:
   - jekyll-feed
   - jekyll-github-metadata
+  - jekyll-relative-links

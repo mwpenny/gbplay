@@ -1,0 +1,30 @@
+---
+layout: default
+---
+
+<div class="home">
+    {%- if page.title -%}
+        <h1 class="page-heading">{{ page.title }}</h1>
+    {%- endif -%}
+
+    {{ content }}
+
+    {%- if site.game-protocols.size > 0 -%}
+    <h2 class="post-list-heading">{{ page.list_title | default: "Documented Games" }}</h2>
+    <ul class="post-list">
+        {%- for page in site.game-protocols -%}
+        <li>
+            <span class="post-meta">{{ page.serial }}</span>
+            <h3>
+                <a class="post-link" href="{{ page.url | relative_url }}">
+                {{ page.game | escape }}
+                </a>
+            </h3>
+            {%- if site.show_excerpts -%}
+                {{ page.excerpt }}
+            {%- endif -%}
+        </li>
+        {%- endfor -%}
+    </ul>
+    {%- endif -%}
+</div>
