@@ -1,0 +1,4 @@
+/* Remove left space in collapsible site menu */
+.site-nav .page-link {
+    margin-left: 0;
+}
