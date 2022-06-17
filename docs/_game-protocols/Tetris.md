@@ -129,13 +129,13 @@ are listed below.
 
 |ID    |Tetromino shape|
 |------|---------------|
-|`0x00`| L             |
-|`0x04`| J             |
-|`0x08`| I             |
-|`0x0C`| O             |
-|`0x10`| Z             |
-|`0x14`| S             |
-|`0x18`| T             |
+|`0x00`|L              |
+|`0x04`|J              |
+|`0x08`|I              |
+|`0x0C`|O              |
+|`0x10`|Z              |
+|`0x14`|S              |
+|`0x18`|T              |
 
 If a round lasts long enough to exhaust the 256-tetromino buffer, the sequence
 repeats.
