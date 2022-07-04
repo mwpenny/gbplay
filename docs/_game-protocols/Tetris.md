@@ -62,7 +62,8 @@ The connection begins with the two games choosing which device will act as the
 master and initiate all data transfers. This role goes to the first player to
 select "2 player" on the main menu, which causes the byte `0x29` to be sent.
 Upon receiving this byte, the linked game sends `0x55` as an acknowledgement and
-both move to the music selection screen.
+both move to the music selection screen. The required delay between transfers is
+~30 ms.
 
 ### Music selection
 
@@ -77,7 +78,7 @@ track will play during the game's rounds. The current menu position (`0x1C` -
 `0x1F`) is repeatedly sent to the slave so that its graphics and sound can be
 updated accordingly (its responses are ignored). When the selection is
 confirmed by pressing start, `0x50` is sent and both games move to the
-difficulty selection screen.
+difficulty selection screen. The required delay between transfers is ~30 ms.
 
 ### Difficulty selection
 
@@ -93,10 +94,11 @@ begins. Unlike music selection, both players have control over their own
 difficulty setting. During this time, the two games repeatedly exchange their
 current menu position (`0x00` - `0x05`) so their graphics can be updated to
 reflect the other player's choice. Again, only the master can press start and
-trigger the next state (pre-game initialization). This is indicated with the
-byte `0x60`, to which the slave responds with `0x55`.
+trigger the next state (pre-round initialization). This is indicated with the
+byte `0x60`, to which the slave responds with `0x55`. The required delay between
+transfers is ~30 ms.
 
-### Pre-game initialization
+### Pre-round initialization
 
 {%
    include image.html
@@ -109,10 +111,13 @@ tetrominoes and then 10 random garbage lines before each round begins so that
 both players receive the same pieces and have the same initial garbage (if
 difficulty settings are different between players, they just truncate the shared
 garbage tiles at different heights). The start of each block of data is signaled
-with the same exchange as in role negotiation (`0x29`/`0x55`).
+with the same exchange as in role negotiation (`0x29`/`0x55`). The required
+delay between transfers is ~5 ms.
 
-After these transfers, the game can begin. This is indicated with the magic bytes
-`0x30`, `0x00`, `0x02`, `0x02`, `0x20`.
+After this data is sent, the game can begin. This is indicated with the magic
+bytes `0x30`, `0x00`, `0x02`, `0x02`, `0x20`. The required delay between these
+transfers is ~30 ms. After this, there is a delay of ~500 ms during which
+receiving any data will freeze the game.
 
 #### Tetromino generation
 
@@ -164,7 +169,8 @@ height decreases (meaning that lines were cleared), the receiving game adds
 garbage to the bottom of the playfield (i.e., the opponent "attacks" and makes
 the game more difficult). At any time, the master game can also trigger a pause
 by sending `0x94` (acknowledged with a `0x00` from the slave). The pause will
-end when `0x94` stops being sent (acknowledged with `0xFF`).
+end when `0x94` stops being sent (acknowledged with `0xFF`). The required delay
+between transfers is ~30 ms.
 
 The game indicates a win (clearing 30 lines) with `0x77` and a loss (exceeding
 the height of the playfield) with `0xAA`. Once both games acknowledge the end of
@@ -182,11 +188,11 @@ the round by sending `0x34`, the master delays for a short time and then sends
 The round end screen displays who won or lost, or whether the round ended in a
 draw. The master player (who always appears as Mario) decides when to move on
 by pressing start, at which point `0x60` is sent (acknowledged with `0x27`)
-followed by `0x79`.
+followed by `0x79`. The required delay between transfers is ~30 ms.
 
 What happens next depends on whether a player has won 4 rounds or not. If
 yes, both games return to difficulty selection. If no, another round begins
-(pre-game initialization state). There is no opportunity to change the music.
+(pre-round initialization state). There is no opportunity to change the music.
 
 ## Summary and notes
 

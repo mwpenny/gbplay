@@ -53,7 +53,7 @@ a Super Game Boy.
 The first game to select "versus" from the main menu becomes the master and
 takes on the responsibility of initiating all subsequent data transfers. It
 indicates this by sending the byte `0x75`. The connected game responds with
-`0x54`.
+`0x54`. The required delay between transfers is ~10 ms.
 
 ### Fighter selection
 
@@ -70,7 +70,8 @@ constantly exchanged between both games to keep the UIs updated -- it is as if
 each joypad is also connected to the linked Game Boy, similar to a multiplayer
 console game. Each bit represents one of the 8 buttons, and they are in the same
 order as they would be if read directly from the
-[hardware](https://gbdev.io/pandocs/Joypad_Input.html).
+[hardware](https://gbdev.io/pandocs/Joypad_Input.html). The required delay
+between transfers is ~10 ms.
 
 |Bit|Button|
 |---|------|
@@ -99,7 +100,8 @@ they are both synchronized.
 After fighter selection, the location to fight is chosen. Joypad input bytes are
 again repeatedly exchanged between both games allowing either player to move the
 cursor and confirm. As soon as one has made a selection using either `A` or
-`Start`, both games begin the first round of the fight.
+`Start`, both games begin the first round of the fight. The required delay
+between transfers is ~10 ms.
 
 ### Fighting
 
@@ -111,7 +113,8 @@ cursor and confirm. As soon as one has made a selection using either `A` or
 
 Each round has a short introduction, after which both games will pause until
 two synchronization transfers take place: `0xE9`/`0xEA` and `0xF0`/`0xFA`. After
-this, joypad input is constantly exchanged as in the menu-related states.
+this, joypad input is constantly exchanged as in the menu-related states. The
+required delay between transfers is ~5 ms.
 
 The link cable protocol has no mechanism to report where fighters are or which
 moves are used. Instead, both games feed the received joypad data to the
