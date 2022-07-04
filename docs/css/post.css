@@ -5,3 +5,7 @@ figure.centered {
 figure > iframe {
     max-width: 100%;
 }
+
+figure > a {
+    display: inline-block;
+}

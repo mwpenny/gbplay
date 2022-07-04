@@ -1,7 +1,10 @@
 <figure class="centered">
-    <a href="{{ include.src | relative_url }}" title="{{ include.caption | markdownify | strip_html | escape }}" target="_blank">
-        <img src="{{ include.src | relative_url }}"/>
-    </a>
+    {%- assign srcs = include.src | split: ' ' -%}
+    {% for src in srcs %}
+        <a href="{{ src | relative_url }}" title="{{ include.caption | markdownify | strip_html | escape }}" target="_blank">
+            <img src="{{ src | relative_url }}"/>
+        </a>
+    {% endfor %}
 
     {% if include.caption %}
         <figcaption>{{ include.caption | markdownify }}</figcaption>
