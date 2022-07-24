@@ -170,7 +170,7 @@ our use-case. If we can somehow force both Game Boys to operate in slave mode
 then the latency can be theoretically infinite, supporting even the roughest of
 connections. As it turns out, this is exactly what stacksmashing did for Tetris
 and what another project called [TCPoke](http://pepijndevos.nl/TCPoke/)
-did for Pokemon Generation I and II. Bingo! This is a viable approach and has
+did for Pokemon Generation 1 and 2. Bingo! This is a viable approach and has
 already been proven to work with another game.
 
 ## Next steps

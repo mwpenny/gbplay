@@ -349,7 +349,7 @@ received from a Game Boy.
 
 Like the link cable server, this ended up not being overly-complex either. The
 code is available
-[here]({{ site.github.repository_url }}/blob/fd707bf061460e9b0853770a8a2d8a42573b2be4/tools/pokered-mock-trade/trader.py).
+[here]({{ site.github.repository_url }}/blob/fd707bf061460e9b0853770a8a2d8a42573b2be4/tools/pokered-mock-trade/trader.py)
 and the final result is shown in the video below.
 
 {% include youtube.html id="PsPIXxGxTOE" caption="The link cable server and mock trader in action" %}

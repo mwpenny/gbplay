@@ -283,7 +283,7 @@ support -- and it works too. See the video below.
 ## Future work
 
 This was some great progress! We're able to send arbitrary data between a PC and
-Game Boy -- both programatically and from an emulator. We can use these new
+Game Boy -- both programmatically and from an emulator. We can use these new
 tools to pry deeper into how the link cable protocols of specific games work and
 to test assumptions and theories about the connection using real hardware.
 
