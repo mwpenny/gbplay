@@ -3,6 +3,8 @@
 
 #include "storage.h"
 
+#define NVS_NAMESPACE "storage"
+
 static nvs_handle s_storage_handle;
 
 void storage_initialize()
@@ -15,7 +17,7 @@ void storage_initialize()
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
-    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &s_storage_handle));
+    ESP_ERROR_CHECK(nvs_open(NVS_NAMESPACE, NVS_READWRITE, &s_storage_handle));
 }
 
 void storage_deinitialize()

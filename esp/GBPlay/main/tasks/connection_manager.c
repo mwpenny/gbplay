@@ -12,11 +12,13 @@
 
 #define TASK_NAME "connection-manager"
 
+#define IDLE_SCAN_PERIOD_SECONDS    30
 #define SCAN_LIST_SIZE              10
 #define CONNECTION_HISTORY_SIZE     WIFI_MAX_SAVED_NETWORKS
 #define MINUTE_MICROSECONDS         (60 * 1000 * 1000)
 #define NETWORK_BLOCK_MINUTES       5
 
+// TODO: custom events for these in wifi.c so we don't need to use the ESP APIs
 typedef enum {
     CONNECTION_DROPPED   = 1,
     CONNECTION_LEFT      = 2,
@@ -191,7 +193,7 @@ static void task_connection_manager(void* data)
             // Try to reconnect
             while (!wifi_is_connected() && !_try_connect_prev() && !_try_autoconnect())
             {
-                sleep(30);
+                sleep(IDLE_SCAN_PERIOD_SECONDS);
             }
         }
         else if (bits & CONNECTION_LEFT)

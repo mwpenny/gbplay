@@ -109,7 +109,7 @@ void wifi_deinitialize()
     vSemaphoreDelete(s_wifi_lock);
 }
 
-void wifi_scan(wifi_ap_info* ap_list, uint16_t* ap_count)
+void wifi_scan(wifi_ap_info* out_ap_list, uint16_t* ap_count)
 {
     assert(xSemaphoreTake(s_wifi_lock, portMAX_DELAY) == pdTRUE);
 
@@ -130,7 +130,7 @@ void wifi_scan(wifi_ap_info* ap_list, uint16_t* ap_count)
     for (int i = 0; i < *ap_count; ++i)
     {
         wifi_ap_record_t* src = &temp_ap_list[i];
-        wifi_ap_info* dst = &ap_list[i];
+        wifi_ap_info* dst = &out_ap_list[i];
 
         if (src->rssi < WIFI_MINIMUM_RSSI)
         {
@@ -229,7 +229,7 @@ bool wifi_connect(const char* ssid, const char* password, bool force)
                 s_wifi_event_group,
                 CONNECTION_FAIL | CONNECTION_SUCCESS,
                 pdFALSE,  // xClearOnExit
-                pdFALSE, // xWaitForAllBits
+                pdFALSE,  // xWaitForAllBits
                 CONNECTION_TIMEOUT_MS / portTICK_RATE_MS
             ) & CONNECTION_SUCCESS) == CONNECTION_SUCCESS;
         }
@@ -335,7 +335,7 @@ bool wifi_save_network(const char* ssid, const char* password)
 
             _wifi_flush_saved_networks();
 
-            saved = false;
+            saved = true;
         }
         else if (s_saved_networks.count < WIFI_MAX_SAVED_NETWORKS)
         {
