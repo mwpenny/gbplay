@@ -33,7 +33,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node_version: 16.x
+          node-version: 16.x
 
       - name: Build server
         working-directory: ./server
