@@ -36,7 +36,7 @@ jobs:
           node_version: 16.x
 
       - name: Build server
-        working_directory: ./server
+        working-directory: ./server
         # TODO: run tests (after creating tests)
         run: |
           npm ci
