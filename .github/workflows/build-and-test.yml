@@ -1,0 +1,40 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches: [ master ]
+
+jobs:
+  build_firmware:
+    name: Build firmware
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: ESP-IDF build
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v4.4.1
+        target: esp32
+        path: esp/GBPlay
+
+  build_server:
+    name: Build server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node_version: 16.x
+        # TODO: run tests (after creating tests)
+        run: |
+          npm ci
+          npm run build
