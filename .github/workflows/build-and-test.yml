@@ -1,4 +1,4 @@
-name: Build and Test
+name: CI build
 
 on:
   pull_request:
@@ -34,6 +34,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node_version: 16.x
+
+      - name: Build server
         # TODO: run tests (after creating tests)
         run: |
           npm ci
