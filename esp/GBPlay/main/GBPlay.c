@@ -6,6 +6,7 @@
 
 #include "commands.h"
 #include "hardware/led.h"
+#include "hardware/spi.h"
 #include "hardware/storage.h"
 #include "hardware/wifi.h"
 
@@ -46,6 +47,7 @@ void app_main()
 
     // Initialize hardware
     led_initialize();
+    spi_initialize();
     storage_initialize();
     wifi_initialize();
 
@@ -62,6 +64,7 @@ void app_main()
 
     wifi_deinitialize();
     storage_deinitialize();
+    spi_deinitialize();
 
     esp_event_loop_delete_default();
 }
