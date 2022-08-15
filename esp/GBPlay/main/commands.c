@@ -3,6 +3,7 @@
 #include <esp_log.h>
 
 #include "http.h"
+#include "hardware/spi.h"
 #include "hardware/wifi.h"
 
 #define DEFAULT_SCAN_LIST_SIZE 10
@@ -29,6 +30,11 @@ static struct {
     struct arg_end* end;
 } forget_connection_args;
 
+static struct {
+    struct arg_int* tx;
+    struct arg_end* end;
+} spi_exchange_args;
+
 static int _wifi_scan(int argc, char** argv)
 {
     uint16_t ap_count = DEFAULT_SCAN_LIST_SIZE;
@@ -51,7 +57,8 @@ static int _wifi_scan(int argc, char** argv)
 static int _wifi_connect(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void**)&wifi_connect_args);
-    if (nerrors != 0) {
+    if (nerrors != 0)
+    {
         arg_print_errors(stderr, wifi_connect_args.end, argv[0]);
         return 1;
     }
@@ -107,7 +114,8 @@ static int _http_get(int argc, char** argv)
     }
 
     int nerrors = arg_parse(argc, argv, (void**)&http_get_args);
-    if (nerrors != 0) {
+    if (nerrors != 0)
+    {
         arg_print_errors(stderr, http_get_args.end, argv[0]);
         return 1;
     }
@@ -138,7 +146,8 @@ static void _list_saved_networks(wifi_network_credentials* saved_networks, int c
 static int _load_connection(int argc, char** argv)
 {
     int nerrors = arg_parse(argc, argv, (void**)&load_connection_args);
-    if (nerrors != 0) {
+    if (nerrors != 0)
+    {
         arg_print_errors(stderr, load_connection_args.end, argv[0]);
         return 1;
     }
@@ -168,7 +177,8 @@ static int _load_connection(int argc, char** argv)
 static int _forget_connection(int argc, char** argv)
 {
     int nerrors = arg_parse(argc, argv, (void**)&forget_connection_args);
-    if (nerrors != 0) {
+    if (nerrors != 0)
+    {
         arg_print_errors(stderr, forget_connection_args.end, argv[0]);
         return 1;
     }
@@ -193,6 +203,22 @@ static int _forget_connection(int argc, char** argv)
         wifi_forget_network(saved_networks[index].ssid);
         return 0;
     }
+}
+
+static int _spi_exchange(int argc, char** argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**)&spi_exchange_args);
+    if (nerrors != 0)
+    {
+        arg_print_errors(stderr, spi_exchange_args.end, argv[0]);
+        return 1;
+    }
+
+    uint8_t tx = spi_exchange_args.tx->ival[0] & 0xFF;
+    uint8_t rx = spi_exchange_byte(tx);
+
+    ESP_LOGI(__func__, "Tx: 0x%02X, Rx: 0x%02X", tx, rx);
+    return 0;
 }
 
 
@@ -305,6 +331,26 @@ void _register_forget_connection()
     ESP_ERROR_CHECK(esp_console_cmd_register(&forget_def));
 }
 
+void _register_spi_exchange()
+{
+    spi_exchange_args.tx = arg_int1(
+        NULL,
+        NULL,
+        "tx", "The byte to send. Only the lower 8 bits will be used."
+    );
+    spi_exchange_args.end = arg_end(10 /* max error count */);
+
+    const esp_console_cmd_t spi_def = {
+        .command = "spi",
+        .help = "Exchange byte with connected SPI slave",
+        .hint = NULL,
+        .func = &_spi_exchange,
+        .argtable = &spi_exchange_args
+    };
+
+    ESP_ERROR_CHECK(esp_console_cmd_register(&spi_def));
+}
+
 void cmds_register()
 {
     _register_wifi_scan();
@@ -316,6 +362,8 @@ void cmds_register()
 
     _register_load_connection();
     _register_forget_connection();
+
+    _register_spi_exchange();
 
     esp_console_register_help_command();
 }
