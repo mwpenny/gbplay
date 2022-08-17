@@ -13,15 +13,17 @@
 
 #define WIFI_SAVED_NETWORKS_STORAGE_KEY "wifi_networks"
 
-typedef enum {
-    CONNECTION_FAIL    = 1,
-    CONNECTION_SUCCESS = 2
-} WifiConnectionEvent;
+// Assumes dst is a statically allocated array
+#define TRUNCATED_STRING_COPY(dst, src) \
+    strncpy(dst, src, sizeof(dst)); \
+    dst[sizeof(dst) - 1] = '\0';
 
 typedef struct {
     wifi_network_credentials networks[WIFI_MAX_SAVED_NETWORKS];
     int count;
 } wifi_saved_network_info;
+
+ESP_EVENT_DEFINE_BASE(CONNECTION_EVENT);
 
 static SemaphoreHandle_t s_wifi_lock;
 static SemaphoreHandle_t s_wifi_storage_lock;
@@ -41,7 +43,20 @@ static void _on_disconnect(void* arg, esp_event_base_t event_base, int32_t event
     ESP_LOGI(__func__, "Disconnected from network %s", event->ssid);
 
     _set_connection_status(false);
-    xEventGroupSetBits(s_wifi_event_group, CONNECTION_FAIL);
+
+    connection_event connection_event_id = (event->reason == WIFI_REASON_ASSOC_LEAVE) ?
+        CONNECTION_EVENT_LEFT :
+        CONNECTION_EVENT_DROPPED;
+
+    xEventGroupSetBits(s_wifi_event_group, connection_event_id);
+
+    ESP_ERROR_CHECK(esp_event_post(
+        CONNECTION_EVENT,
+        connection_event_id,
+        NULL,
+        0,
+        portMAX_DELAY
+    ));
 }
 
 static void _on_connect(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
@@ -52,8 +67,25 @@ static void _on_connect(void* arg, esp_event_base_t event_base, int32_t event_id
     esp_ip4addr_ntoa(&event->ip_info.ip, address, sizeof(address));
     ESP_LOGI(__func__, "Got IP: %s", address);
 
-    _set_connection_status(true);
-    xEventGroupSetBits(s_wifi_event_group, CONNECTION_SUCCESS);
+    wifi_ap_record_t ap_info = { 0 };
+
+    // If we are actually disconnected, we will get a disconnect event soon
+    if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK)
+    {
+        connection_event_connected connect_event = {0};
+        TRUNCATED_STRING_COPY(connect_event.ssid, (char*)ap_info.ssid);
+
+        _set_connection_status(true);
+        xEventGroupSetBits(s_wifi_event_group, CONNECTION_EVENT_CONNECTED);
+
+        ESP_ERROR_CHECK(esp_event_post(
+            CONNECTION_EVENT,
+            CONNECTION_EVENT_CONNECTED,
+            &connect_event,
+            sizeof(connect_event),
+            portMAX_DELAY
+        ));
+    }
 }
 
 void wifi_initialize()
@@ -137,8 +169,7 @@ void wifi_scan(wifi_ap_info* out_ap_list, uint16_t* ap_count)
             continue;
         }
 
-        strncpy(dst->ssid, (char*)src->ssid, WIFI_MAX_SSID_LENGTH + 1);
-        dst->ssid[WIFI_MAX_SSID_LENGTH] = 0;
+        TRUNCATED_STRING_COPY(dst->ssid, (char*)src->ssid);
 
         dst->rssi = src->rssi;
         dst->channel = src->primary;
@@ -164,7 +195,7 @@ static void _disconnect()
         // Wait for disconnect
         xEventGroupWaitBits(
             s_wifi_event_group,
-            CONNECTION_FAIL,
+            CONNECTION_EVENT_DROPPED | CONNECTION_EVENT_LEFT,
             pdTRUE,  // xClearOnExit
             pdFALSE, // xWaitForAllBits
             portMAX_DELAY
@@ -203,38 +234,43 @@ bool wifi_connect(const char* ssid, const char* password, bool force)
             // Connected to something else. Give up.
             // When the user chooses to connect, force = true.
             // When the connection manager tries to connect, force = false.
-            goto end;
-        }
-
-        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &cfg));
-
-        for (int i = 0; !did_connect && i < MAX_CONNECTION_RETRY_COUNT; ++i)
-        {
-            _disconnect();
-
             ESP_LOGI(
                 __func__,
-                "Trying to connect to network '%s' (attempt %d of %d)...",
-                ssid, i + 1, MAX_CONNECTION_RETRY_COUNT
+                "Already connected to a network and new connection is not forced"
             );
+        }
+        else
+        {
+            ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &cfg));
 
-            xEventGroupClearBits(s_wifi_event_group, 0xFF);
-
-            if (esp_wifi_connect() != ESP_OK)
+            for (int i = 0; !did_connect && i < MAX_CONNECTION_RETRY_COUNT; ++i)
             {
-                goto end;
-            }
+                _disconnect();
 
-            did_connect = (xEventGroupWaitBits(
-                s_wifi_event_group,
-                CONNECTION_FAIL | CONNECTION_SUCCESS,
-                pdFALSE,  // xClearOnExit
-                pdFALSE,  // xWaitForAllBits
-                CONNECTION_TIMEOUT_MS / portTICK_RATE_MS
-            ) & CONNECTION_SUCCESS) == CONNECTION_SUCCESS;
+                ESP_LOGI(
+                    __func__,
+                    "Trying to connect to network '%s' (attempt %d of %d)...",
+                    ssid, i + 1, MAX_CONNECTION_RETRY_COUNT
+                );
+
+                xEventGroupClearBits(s_wifi_event_group, 0xFF);
+
+                if (esp_wifi_connect() != ESP_OK)
+                {
+                    ESP_LOGE(__func__, "Connection failed");
+                    break;
+                }
+
+                did_connect = (xEventGroupWaitBits(
+                    s_wifi_event_group,
+                    0xFF,     // Bits to wait for (any bits)
+                    pdTRUE,   // xClearOnExit
+                    pdFALSE,  // xWaitForAllBits
+                    CONNECTION_TIMEOUT_MS / portTICK_RATE_MS
+                ) & CONNECTION_EVENT_CONNECTED) == CONNECTION_EVENT_CONNECTED;
+            }
         }
 
-end:
         xSemaphoreGive(s_wifi_lock);
         return did_connect;
     }
@@ -330,8 +366,7 @@ bool wifi_save_network(const char* ssid, const char* password)
         wifi_network_credentials* existing = _get_saved_network(ssid);
         if (existing)
         {
-            strncpy(existing->pass, password, WIFI_MAX_PASS_LENGTH);
-            existing->pass[WIFI_MAX_PASS_LENGTH] = '\0';
+            TRUNCATED_STRING_COPY(existing->pass, password);
 
             _wifi_flush_saved_networks();
 
@@ -341,11 +376,8 @@ bool wifi_save_network(const char* ssid, const char* password)
         {
             wifi_network_credentials* ap = &s_saved_networks.networks[s_saved_networks.count];
 
-            strncpy(ap->ssid, ssid, WIFI_MAX_SSID_LENGTH);
-            ap->ssid[WIFI_MAX_SSID_LENGTH] = '\0';
-
-            strncpy(ap->pass, password, WIFI_MAX_PASS_LENGTH);
-            ap->pass[WIFI_MAX_PASS_LENGTH] = '\0';
+            TRUNCATED_STRING_COPY(ap->ssid, ssid);
+            TRUNCATED_STRING_COPY(ap->pass, password);
 
             ++s_saved_networks.count;
             _wifi_flush_saved_networks();

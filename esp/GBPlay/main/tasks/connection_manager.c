@@ -5,8 +5,8 @@
 #include <freertos/event_groups.h>
 #include <freertos/task.h>
 
+#include <esp_event.h>
 #include <esp_log.h>
-#include <esp_wifi.h>
 
 #include "../hardware/wifi.h"
 
@@ -17,13 +17,6 @@
 #define CONNECTION_HISTORY_SIZE     WIFI_MAX_SAVED_NETWORKS
 #define MINUTE_MICROSECONDS         (60 * 1000 * 1000)
 #define NETWORK_BLOCK_MINUTES       5
-
-// TODO: custom events for these in wifi.c so we don't need to use the ESP APIs
-typedef enum {
-    CONNECTION_DROPPED   = 1,
-    CONNECTION_LEFT      = 2,
-    CONNECTION_CONNECTED = 4
-} ConnectionEvent;
 
 typedef struct {
     char ssid[WIFI_MAX_SSID_LENGTH + 1];
@@ -42,29 +35,22 @@ static connection_history s_connection_history = {0};
 
 static void _on_disconnect(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    wifi_event_sta_disconnected_t* event = (wifi_event_sta_disconnected_t*)event_data;
-
-    if (event->reason == WIFI_REASON_ASSOC_LEAVE)
-    {
-        xEventGroupSetBits(s_connection_event_group, CONNECTION_LEFT);
-    }
-    else
-    {
-        xEventGroupSetBits(s_connection_event_group, CONNECTION_DROPPED);
-    }
+    xEventGroupSetBits(s_connection_event_group, CONNECTION_EVENT_DROPPED);
 }
 
-static void _on_wifi_connect(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+static void _on_leave(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    wifi_event_sta_connected_t* event = (wifi_event_sta_connected_t*)event_data;
-
-    strncpy(s_prev_ssid, (char*)event->ssid, WIFI_MAX_SSID_LENGTH);
-    s_prev_ssid[WIFI_MAX_SSID_LENGTH] = '\0';
+    xEventGroupSetBits(s_connection_event_group, CONNECTION_EVENT_LEFT);
 }
 
-static void _on_network_connect(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+static void _on_connect(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    xEventGroupSetBits(s_connection_event_group, CONNECTION_CONNECTED);
+    connection_event_connected* event = (connection_event_connected*)event_data;
+
+    strncpy(s_prev_ssid, (char*)event->ssid, sizeof(s_prev_ssid));
+    s_prev_ssid[sizeof(s_prev_ssid) - 1] = '\0';
+
+    xEventGroupSetBits(s_connection_event_group, CONNECTION_EVENT_CONNECTED);
 }
 
 static connection_info* _ensure_connection_info(const char* ssid)
@@ -186,17 +172,20 @@ static void task_connection_manager(void* data)
             portMAX_DELAY
         );
 
-        if (bits & CONNECTION_DROPPED)
+        if (bits & CONNECTION_EVENT_DROPPED)
         {
             ESP_LOGI(TASK_NAME, "Connection dropped");
 
             // Try to reconnect
+            // Could have also been a false alarm (disconnect + reconnect by us)
             while (!wifi_is_connected() && !_try_connect_prev() && !_try_autoconnect())
             {
                 sleep(IDLE_SCAN_PERIOD_SECONDS);
             }
+
+            ESP_LOGI(TASK_NAME, "Connection reestablished");
         }
-        else if (bits & CONNECTION_LEFT)
+        else if (bits & CONNECTION_EVENT_LEFT)
         {
             ESP_LOGI(TASK_NAME, "Left network voluntarily. Not attempting to reconnect.");
 
@@ -204,9 +193,10 @@ static void task_connection_manager(void* data)
             connection_info* info = _ensure_connection_info(s_prev_ssid);
             _block_network(info);
         }
-        else if (bits & CONNECTION_CONNECTED)
+        else if (bits & CONNECTION_EVENT_CONNECTED)
         {
             ESP_LOGI(TASK_NAME, "Connected to network '%s'", s_prev_ssid);
+
             _clear_connection_history();
         }
     }
@@ -215,6 +205,16 @@ static void task_connection_manager(void* data)
 void task_connection_manager_start()
 {
     s_connection_event_group = xEventGroupCreate();
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        CONNECTION_EVENT, CONNECTION_EVENT_DROPPED, &_on_disconnect, NULL, NULL
+    ));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        CONNECTION_EVENT, CONNECTION_EVENT_LEFT, &_on_leave, NULL, NULL
+    ));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        CONNECTION_EVENT, CONNECTION_EVENT_CONNECTED, &_on_connect, NULL, NULL
+    ));
 
     xTaskCreatePinnedToCore(
         &task_connection_manager,
@@ -226,16 +226,6 @@ void task_connection_manager_start()
         0                          // CPU core ID
     );
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &_on_disconnect, NULL, NULL
-    ));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &_on_wifi_connect, NULL, NULL
-    ));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        IP_EVENT, IP_EVENT_STA_GOT_IP, &_on_network_connect, NULL, NULL
-    ));
-
     // Wake the task up and start looking for networks
-    xEventGroupSetBits(s_connection_event_group, CONNECTION_DROPPED);
+    xEventGroupSetBits(s_connection_event_group, CONNECTION_EVENT_DROPPED);
 }
