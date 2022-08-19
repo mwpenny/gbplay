@@ -35,8 +35,8 @@ void init_console()
 
 void start_tasks()
 {
-    task_network_manager_start();
-    task_status_indicator_start();
+    task_network_manager_start(0 /* core */, 2 /* priority */);
+    task_status_indicator_start(0 /* core */, 1 /* priority */);
 }
 
 void app_main()

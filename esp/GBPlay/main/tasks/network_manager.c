@@ -204,7 +204,7 @@ static void task_network_manager(void* data)
     }
 }
 
-void task_network_manager_start()
+void task_network_manager_start(int core, int priority)
 {
     s_connection_event_group = xEventGroupCreate();
 
@@ -223,9 +223,9 @@ void task_network_manager_start()
         TASK_NAME,
         4096,                      // Stack size
         NULL,                      // Arguments
-        1,                         // Priority
+        priority,                  // Priority
         NULL,                      // Task handle (output parameter)
-        0                          // CPU core ID
+        core                       // CPU core ID
     );
 
     // Wake the task up and start looking for networks

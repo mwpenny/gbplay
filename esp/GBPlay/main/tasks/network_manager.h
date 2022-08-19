@@ -19,6 +19,6 @@
 
     The task is suspended when not trying to reconnect.
 */
-void task_network_manager_start();
+void task_network_manager_start(int core, int priority);
 
 #endif
