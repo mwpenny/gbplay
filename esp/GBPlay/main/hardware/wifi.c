@@ -23,7 +23,7 @@ typedef struct {
     int count;
 } wifi_saved_network_info;
 
-ESP_EVENT_DEFINE_BASE(CONNECTION_EVENT);
+ESP_EVENT_DEFINE_BASE(NETWORK_EVENT);
 
 static SemaphoreHandle_t s_wifi_lock;
 static SemaphoreHandle_t s_wifi_storage_lock;
@@ -44,15 +44,15 @@ static void _on_disconnect(void* arg, esp_event_base_t event_base, int32_t event
 
     _set_connection_status(false);
 
-    connection_event connection_event_id = (event->reason == WIFI_REASON_ASSOC_LEAVE) ?
-        CONNECTION_EVENT_LEFT :
-        CONNECTION_EVENT_DROPPED;
+    network_event network_event_id = (event->reason == WIFI_REASON_ASSOC_LEAVE) ?
+        NETWORK_EVENT_LEFT :
+        NETWORK_EVENT_DROPPED;
 
-    xEventGroupSetBits(s_wifi_event_group, connection_event_id);
+    xEventGroupSetBits(s_wifi_event_group, network_event_id);
 
     ESP_ERROR_CHECK(esp_event_post(
-        CONNECTION_EVENT,
-        connection_event_id,
+        NETWORK_EVENT,
+        network_event_id,
         NULL,
         0,
         portMAX_DELAY
@@ -72,15 +72,15 @@ static void _on_connect(void* arg, esp_event_base_t event_base, int32_t event_id
     // If we are actually disconnected, we will get a disconnect event soon
     if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK)
     {
-        connection_event_connected connect_event = {0};
+        network_event_connected connect_event = {0};
         TRUNCATED_STRING_COPY(connect_event.ssid, (char*)ap_info.ssid);
 
         _set_connection_status(true);
-        xEventGroupSetBits(s_wifi_event_group, CONNECTION_EVENT_CONNECTED);
+        xEventGroupSetBits(s_wifi_event_group, NETWORK_EVENT_CONNECTED);
 
         ESP_ERROR_CHECK(esp_event_post(
-            CONNECTION_EVENT,
-            CONNECTION_EVENT_CONNECTED,
+            NETWORK_EVENT,
+            NETWORK_EVENT_CONNECTED,
             &connect_event,
             sizeof(connect_event),
             portMAX_DELAY
@@ -195,7 +195,7 @@ static void _disconnect()
         // Wait for disconnect
         xEventGroupWaitBits(
             s_wifi_event_group,
-            CONNECTION_EVENT_DROPPED | CONNECTION_EVENT_LEFT,
+            NETWORK_EVENT_DROPPED | NETWORK_EVENT_LEFT,
             pdTRUE,  // xClearOnExit
             pdFALSE, // xWaitForAllBits
             portMAX_DELAY
@@ -267,7 +267,7 @@ bool wifi_connect(const char* ssid, const char* password, bool force)
                     pdTRUE,   // xClearOnExit
                     pdFALSE,  // xWaitForAllBits
                     CONNECTION_TIMEOUT_MS / portTICK_RATE_MS
-                ) & CONNECTION_EVENT_CONNECTED) == CONNECTION_EVENT_CONNECTED;
+                ) & NETWORK_EVENT_CONNECTED) == NETWORK_EVENT_CONNECTED;
             }
         }
 

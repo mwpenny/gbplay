@@ -10,7 +10,7 @@
 #include "hardware/storage.h"
 #include "hardware/wifi.h"
 
-#include "tasks/connection_manager.h"
+#include "tasks/network_manager.h"
 #include "tasks/status_indicator.h"
 
 #define CONFIG_CONSOLE_MAX_COMMAND_LINE_LENGTH 1024
@@ -35,8 +35,8 @@ void init_console()
 
 void start_tasks()
 {
+    task_network_manager_start();
     task_status_indicator_start();
-    task_connection_manager_start();
 }
 
 void app_main()

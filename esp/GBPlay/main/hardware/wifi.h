@@ -15,17 +15,17 @@
 
 #define WIFI_MAX_SAVED_NETWORKS     5
 
-ESP_EVENT_DECLARE_BASE(CONNECTION_EVENT);
+ESP_EVENT_DECLARE_BASE(NETWORK_EVENT);
 
 typedef enum {
-    CONNECTION_EVENT_DROPPED   = 1,     // Connection lost unexpectedly
-    CONNECTION_EVENT_LEFT      = 2,     // Connection intentionally closed
-    CONNECTION_EVENT_CONNECTED = 4      // Connection established
-} connection_event;
+    NETWORK_EVENT_DROPPED   = 1,     // Network connection lost unexpectedly
+    NETWORK_EVENT_LEFT      = 2,     // Network connection intentionally closed
+    NETWORK_EVENT_CONNECTED = 4      // Network connection established
+} network_event;
 
 typedef struct {
     char ssid[WIFI_MAX_SSID_LENGTH + 1];
-} connection_event_connected;
+} network_event_connected;
 
 typedef struct {
     char ssid[WIFI_MAX_SSID_LENGTH + 1];
