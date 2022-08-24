@@ -4,6 +4,7 @@
 
 #include "http.h"
 #include "hardware/spi.h"
+#include "hardware/storage.h"
 #include "hardware/wifi.h"
 
 #define DEFAULT_SCAN_LIST_SIZE 10
@@ -34,6 +35,22 @@ static struct {
     struct arg_int* tx;
     struct arg_end* end;
 } spi_exchange_args;
+
+static struct {
+    struct arg_str* key;
+    struct arg_str* value;
+    struct arg_end* end;
+} set_value_args;
+
+static struct {
+    struct arg_str* key;
+    struct arg_end* end;
+} get_value_args;
+
+static struct {
+    struct arg_str* key;
+    struct arg_end* end;
+} delete_value_args;
 
 static int _wifi_scan(int argc, char** argv)
 {
@@ -221,6 +238,61 @@ static int _spi_exchange(int argc, char** argv)
     return 0;
 }
 
+static int _set_value(int argc, char** argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**)&set_value_args);
+    if (nerrors != 0)
+    {
+        arg_print_errors(stderr, set_value_args.end, argv[0]);
+        return 1;
+    }
+
+    const char* key = set_value_args.key->sval[0];
+    const char* value = set_value_args.value->sval[0];
+
+    storage_set_string(key, value);
+    return 0;
+}
+
+static int _get_value(int argc, char** argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**)&get_value_args);
+    if (nerrors != 0)
+    {
+        arg_print_errors(stderr, get_value_args.end, argv[0]);
+        return 1;
+    }
+
+    const char* key = get_value_args.key->sval[0];
+    char* value = storage_get_string(key);
+
+    if (value == NULL)
+    {
+        ESP_LOGE(__func__, "No value exists with key='%s'", key);
+        return 1;
+    }
+
+    ESP_LOGI(__func__, "Retrieved %s='%s'", key, value);
+    free(value);
+
+    return 0;
+}
+
+static int _delete_value(int argc, char** argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**)&delete_value_args);
+    if (nerrors != 0)
+    {
+        arg_print_errors(stderr, delete_value_args.end, argv[0]);
+        return 1;
+    }
+
+    const char* key = delete_value_args.key->sval[0];
+    storage_delete(key);
+
+    return 0;
+}
+
 
 static void _register_wifi_scan()
 {
@@ -351,6 +423,55 @@ void _register_spi_exchange()
     ESP_ERROR_CHECK(esp_console_cmd_register(&spi_def));
 }
 
+void _register_set_value()
+{
+    set_value_args.key = arg_str1(NULL, NULL, "key", "The ID of the value to store");
+    set_value_args.value = arg_str1(NULL, NULL, "value", "The value to store");
+    set_value_args.end = arg_end(10 /* max error count */);
+
+    const esp_console_cmd_t set_value_def = {
+        .command = "set-value",
+        .help = "Save a value in flash storage",
+        .hint = NULL,
+        .func = &_set_value,
+        .argtable = &set_value_args
+    };
+
+    ESP_ERROR_CHECK(esp_console_cmd_register(&set_value_def));
+}
+
+void _register_get_value()
+{
+    get_value_args.key = arg_str1(NULL, NULL, "key", "The ID of the value to retrieve");
+    get_value_args.end = arg_end(10 /* max error count */);
+
+    const esp_console_cmd_t get_value_def = {
+        .command = "get-value",
+        .help = "Retrieve a value from flash storage",
+        .hint = NULL,
+        .func = &_get_value,
+        .argtable = &get_value_args
+    };
+
+    ESP_ERROR_CHECK(esp_console_cmd_register(&get_value_def));
+}
+
+void _register_delete_value()
+{
+    delete_value_args.key = arg_str1(NULL, NULL, "key", "The ID of the value to delete");
+    delete_value_args.end = arg_end(10 /* max error count */);
+
+    const esp_console_cmd_t delete_value_def = {
+        .command = "delete-value",
+        .help = "Delete a value from flash storage",
+        .hint = NULL,
+        .func = &_delete_value,
+        .argtable = &delete_value_args
+    };
+
+    ESP_ERROR_CHECK(esp_console_cmd_register(&delete_value_def));
+}
+
 void cmds_register()
 {
     _register_wifi_scan();
@@ -364,6 +485,10 @@ void cmds_register()
     _register_forget_connection();
 
     _register_spi_exchange();
+
+    _register_set_value();
+    _register_get_value();
+    _register_delete_value();
 
     esp_console_register_help_command();
 }

@@ -44,4 +44,11 @@ char* storage_get_string(const char* key);
 */
 void storage_set_string(const char* key, const char* value);
 
+/*
+    Removes a value from non-volatile storage.
+
+    @param key Identifier of the value
+*/
+void storage_delete(const char* key);
+
 #endif

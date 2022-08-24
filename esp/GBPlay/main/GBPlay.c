@@ -11,6 +11,7 @@
 #include "hardware/wifi.h"
 
 #include "tasks/network_manager.h"
+#include "tasks/socket_manager.h"
 #include "tasks/status_indicator.h"
 
 #define CONFIG_CONSOLE_MAX_COMMAND_LINE_LENGTH 1024
@@ -37,6 +38,8 @@ void start_tasks()
 {
     task_network_manager_start(0 /* core */, 2 /* priority */);
     task_status_indicator_start(0 /* core */, 1 /* priority */);
+
+    task_socket_manager_start(1 /* core */, 1 /* priority */);
 }
 
 void app_main()
