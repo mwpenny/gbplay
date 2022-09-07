@@ -2,6 +2,7 @@
 #define _WIFI_H
 
 #include <stdint.h>
+#include <esp_event_base.h>
 
 // Per 802.11 spec
 #define WIFI_MAX_SSID_LENGTH        32
@@ -13,6 +14,18 @@
 #define WIFI_STRONG_RSSI_THRESHOLD -50
 
 #define WIFI_MAX_SAVED_NETWORKS     5
+
+ESP_EVENT_DECLARE_BASE(NETWORK_EVENT);
+
+typedef enum {
+    NETWORK_EVENT_DROPPED   = 1,     // Network connection lost unexpectedly
+    NETWORK_EVENT_LEFT      = 2,     // Network connection intentionally closed
+    NETWORK_EVENT_CONNECTED = 4      // Network connection established
+} network_event;
+
+typedef struct {
+    char ssid[WIFI_MAX_SSID_LENGTH + 1];
+} network_event_connected;
 
 typedef struct {
     char ssid[WIFI_MAX_SSID_LENGTH + 1];
@@ -47,6 +60,8 @@ void wifi_scan(wifi_ap_info* out_ap_list, uint16_t* ap_count);
     @param ssid     SSID of network to connect to
     @param password Password of network to connect to
     @param force    Whether to connect even if already connected to a network
+
+    @returns Whether or not the connection succeeded
 */
 bool wifi_connect(const char* ssid, const char* password, bool force);
 

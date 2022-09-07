@@ -68,3 +68,19 @@ void storage_set_string(const char* key, const char* value)
 
     ESP_LOGI(__func__, "Wrote string '%s' to storage", key);
 }
+
+void storage_delete(const char* key)
+{
+    esp_err_t err = nvs_erase_key(s_storage_handle, key);
+    if (err == ESP_ERR_NVS_NOT_FOUND)
+    {
+        ESP_LOGI(__func__, "Key '%s' does not exist in storage. Nothing to do.", key);
+    }
+    else
+    {
+        ESP_ERROR_CHECK(err);
+        ESP_LOGI(__func__, "Deleted '%s' from storage", key);
+    }
+
+    ESP_ERROR_CHECK(nvs_commit(s_storage_handle));
+}

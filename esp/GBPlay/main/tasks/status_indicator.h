@@ -6,6 +6,6 @@
 
     Solid if connected to Wi-Fi, otherwise blinking.
 */
-void task_status_indicator_start();
+void task_status_indicator_start(int core, int priority);
 
 #endif

@@ -1,8 +1,8 @@
-#ifndef _CONNECTION_MANAGER_H
-#define _CONNECTION_MANAGER_H
+#ifndef _NETWORK_MANAGER_H
+#define _NETWORK_MANAGER_H
 
 /*
-    The connection manager tries to ensure a Wi-Fi connection.
+    The network manager tries to ensure a Wi-Fi connection.
     When the device is not connected to a network, the manager will:
 
       1. Try to reconnect to the previous network, if it was saved
@@ -19,6 +19,6 @@
 
     The task is suspended when not trying to reconnect.
 */
-void task_connection_manager_start();
+void task_network_manager_start(int core, int priority);
 
 #endif

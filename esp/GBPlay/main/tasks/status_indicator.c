@@ -22,15 +22,15 @@ static void task_status_indicator(void* data)
     }
 }
 
-void task_status_indicator_start()
+void task_status_indicator_start(int core, int priority)
 {
     xTaskCreatePinnedToCore(
         &task_status_indicator,
         TASK_NAME,
         configMINIMAL_STACK_SIZE,  // Stack size
         NULL,                      // Arguments
-        0,                         // Priority
+        priority,                  // Priority
         NULL,                      // Task handle (output parameter)
-        0                          // CPU core ID
+        core                       // CPU core ID
     );
 }
