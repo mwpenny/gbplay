@@ -10,3 +10,4 @@ esp/GBPlay/esp-cmd.bat
 server/dist/
 server/node_modules/
 test-roms/
+.project
