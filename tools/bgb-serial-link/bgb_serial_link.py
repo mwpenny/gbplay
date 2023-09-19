@@ -22,7 +22,7 @@ bgb_server = BGBLinkCableServer(**kwargs)
 def data_handler(data):
     response = serial_link.send(data)
     if args.trace:
-        print(f'{data:02X},{response:02X}')
+        print(f"{data:02X},{response:02X}")
     return response
 
 with SerialLinkCableClient(args.serial_port) as serial_link:
