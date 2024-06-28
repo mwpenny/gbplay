@@ -7,6 +7,7 @@
 
 #include <esp_event.h>
 #include <esp_log.h>
+#include <esp_timer.h>
 
 #include "../hardware/wifi.h"
 

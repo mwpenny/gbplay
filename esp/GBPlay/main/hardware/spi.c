@@ -1,4 +1,5 @@
 #include <driver/spi_master.h>
+#include <soc/spi_pins.h>
 
 #include "spi.h"
 
