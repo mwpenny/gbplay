@@ -18,7 +18,7 @@ jobs:
     - name: ESP-IDF build
       uses: espressif/esp-idf-ci-action@v1
       with:
-        esp_idf_version: v4.4.1
+        esp_idf_version: v5.2
         target: esp32
         path: esp/GBPlay
 
