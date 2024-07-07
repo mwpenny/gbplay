@@ -4,6 +4,8 @@
 
 #include <esp_event.h>
 #include <esp_log.h>
+#include <errno.h>
+#include <sys/socket.h>
 
 #include "../hardware/spi.h"
 #include "../hardware/storage.h"

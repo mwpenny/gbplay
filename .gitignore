@@ -3,10 +3,15 @@ __pycache__/
 docs/.bundle
 docs/_site
 docs/vendor
+esp/GBPlay/CMakeFiles/
+esp/GBPlay/config
 esp/GBPlay/build/
 esp/GBPlay/build.bat
 esp/GBPlay/build.sh
+esp/GBPlay/bootloader
+esp/GBPlay/bootloader-prefix
 esp/GBPlay/esp-cmd.bat
+esp/GBPlay/esp-idf/
 server/dist/
 server/node_modules/
 test-roms/

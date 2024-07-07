@@ -266,7 +266,7 @@ bool wifi_connect(const char* ssid, const char* password, bool force)
                     0xFF,     // Bits to wait for (any bits)
                     pdTRUE,   // xClearOnExit
                     pdFALSE,  // xWaitForAllBits
-                    CONNECTION_TIMEOUT_MS / portTICK_RATE_MS
+                    CONNECTION_TIMEOUT_MS / portTICK_PERIOD_MS
                 ) & NETWORK_EVENT_CONNECTED) == NETWORK_EVENT_CONNECTED;
             }
         }
